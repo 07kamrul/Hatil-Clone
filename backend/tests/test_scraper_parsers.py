@@ -93,3 +93,11 @@ def test_extract_product_links_dedupes_and_stays_on_host() -> None:
     assert links == ["https://shop.example.com/sofa/testwood-101", "https://shop.example.com/content/testwood-102"]
     assert next_page_url(html, "https://shop.example.com/sofa-price-in-bangladesh") == \
         "https://shop.example.com/sofa-price-in-bangladesh?page=2"
+
+
+def test_source_404_page_is_skipped_not_failed() -> None:
+    from scraper.parsers import SkipProduct
+
+    html = '<html><body><script>self.__next_f.push([1,"0:[\\"This page could not be found.\\"]\n"])</script></body></html>'
+    with pytest.raises(SkipProduct):
+        parse_product(html, "https://shop.example.com/sofa/gone-1")

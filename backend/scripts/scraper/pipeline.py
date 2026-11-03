@@ -21,7 +21,7 @@ from scraper.config import ScraperConfig
 from scraper.discovery import category_slug_of, classify_url, extract_product_links, next_page_url, parse_sitemap
 from scraper.http import FetchError, PoliteClient, RobotsDisallowedError, render_with_playwright
 from scraper.mapper import to_import
-from scraper.parsers import ParseError, ScrapedProduct, parse_product
+from scraper.parsers import ParseError, ScrapedProduct, SkipProduct, parse_product
 
 log = logging.getLogger("scraper")
 
@@ -43,6 +43,7 @@ class RunReport:
     skipped: int = 0
     requests: int = 0
     failures: list[dict[str, str]] = field(default_factory=list)
+    skips: list[dict[str, str]] = field(default_factory=list)
 
 
 class ScrapeRun:
@@ -137,9 +138,10 @@ class ScrapeRun:
             self.scraped.append(scraped)
             report.created += action == "created"
             report.updated += action == "updated"
-        except RobotsDisallowedError as exc:
+        except (RobotsDisallowedError, SkipProduct) as exc:
             entry.status, entry.error = ScrapeStatus.SKIPPED, str(exc)
             report.skipped += 1
+            report.skips.append({"url": entry.url, "reason": str(exc)[:300]})
         except (FetchError, ParseError, ValueError) as exc:
             entry.status, entry.error = ScrapeStatus.FAILED, str(exc)[:2000]
             report.failed += 1
@@ -196,9 +198,12 @@ def render_report(r: RunReport) -> str:
         f"- Mode: `{r.mode}`", f"- Started: {r.started_at}", f"- Finished: {r.finished_at}",
         f"- URLs discovered: {r.discovered}", f"- Attempted: {r.attempted}",
         f"- Created: {r.created}", f"- Updated: {r.updated}", f"- Failed: {r.failed}",
-        f"- Skipped (robots.txt): {r.skipped}", f"- HTTP requests: {r.requests}", "",
+        f"- Skipped (robots.txt / discontinued / no price): {r.skipped}", f"- HTTP requests: {r.requests}", "",
     ]
     if r.failures:
         lines += ["## Failures", "", "| URL | Error |", "|---|---|"]
         lines += [f"| {f['url']} | {f['error'].replace('|', '/')} |" for f in r.failures]
+    if r.skips:
+        lines += ["", "## Skipped", "", "| URL | Reason |", "|---|---|"]
+        lines += [f"| {s['url']} | {s['reason'].replace('|', '/')} |" for s in r.skips]
     return "\n".join(lines) + "\n"

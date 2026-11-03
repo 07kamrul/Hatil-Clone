@@ -29,6 +29,13 @@ class ParseError(ValueError):
     pass
 
 
+class SkipProduct(ParseError):  # noqa: N818 - signals "not importable", not a malfunction
+    """The page is valid but has nothing to import (discontinued/404 page, call-for-price item)."""
+
+
+NOT_FOUND_MARKERS = ("This page could not be found", "NEXT_NOT_FOUND", "NEXT_HTTP_ERROR_FALLBACK;404")
+
+
 @dataclass
 class ScrapedVariant:
     color: str | None
@@ -128,6 +135,8 @@ def _resolve(value: Any, refs: dict[str, str]) -> Any:
 def parse_product(html: str, url: str) -> ScrapedProduct:
     flight = extract_flight(html)
     details = find_json(flight, "productDetails") if flight else None
+    if not details and any(marker in html for marker in NOT_FOUND_MARKERS):
+        raise SkipProduct(f"Not found on source (discontinued): {url}")
     if isinstance(details, dict) and details.get("name"):
         refs = text_rows(flight)
         return _from_details(details, find_json(flight, "productConfigs") or [],
@@ -158,7 +167,7 @@ def _from_details(d: dict, configs: list, info: list, refs: dict[str, str], url:
     if current is None:
         current = min((v.price for v in variants if v.price), default=None)
     if current is None:
-        raise ParseError(f"No price found for {url}")
+        raise SkipProduct(f"No price on source (call for price): {url}")
     regular, sale = (old, current) if old and old > current else (current, None)
 
     sections = {str(s.get("Title") or "").strip().lower(): _resolve(s.get("Description"), refs) for s in info

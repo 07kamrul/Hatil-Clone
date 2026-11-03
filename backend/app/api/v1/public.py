@@ -61,7 +61,9 @@ def products_by_ids(db: DbSession, ids: str = Query(..., description="Comma-sepa
 
 
 @router.get("/products/compare", response_model=list[ProductDetail], tags=["catalog"])
-def compare_products(db: DbSession, ids: str = Query(..., description="Comma-separated product ids (max 4)")) -> list[ProductDetail]:
+def compare_products(
+    db: DbSession, ids: str = Query(..., description="Comma-separated product ids (max 4)")
+) -> list[ProductDetail]:
     """Full details for the compare table; does not count as a product view."""
     try:
         parsed = [int(i) for i in ids.split(",") if i.strip()]
