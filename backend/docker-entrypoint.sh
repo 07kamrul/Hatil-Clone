@@ -17,8 +17,10 @@ wait_for_db() {
 import os, sys, time
 from sqlalchemy import create_engine, text
 
+from app.core.config import normalize_database_url
+
 deadline = time.monotonic() + int(os.environ.get("DB_WAIT_SECONDS", "60"))
-engine = create_engine(os.environ["DATABASE_URL"], pool_pre_ping=True)
+engine = create_engine(normalize_database_url(os.environ["DATABASE_URL"]), pool_pre_ping=True)
 while True:
     try:
         with engine.connect() as conn:

@@ -9,6 +9,19 @@ _DEV_JWT_SECRET = "dev-only-insecure-jwt-secret-change-me-0000"  # noqa: S105
 _DEV_ADMIN_PASSWORD = "ChangeMe123!"  # noqa: S105
 
 
+# The app uses sync SQLAlchemy + psycopg 3; map other Postgres schemes (asyncpg, psycopg2,
+# bare postgres://) that hosting panels commonly generate onto the installed driver.
+_PG_SCHEME_ALIASES = ("postgresql+asyncpg://", "postgresql+psycopg2://", "postgresql://", "postgres://")
+_PG_SCHEME = "postgresql+psycopg://"
+
+
+def normalize_database_url(url: str) -> str:
+    for alias in _PG_SCHEME_ALIASES:
+        if url.startswith(alias):
+            return _PG_SCHEME + url[len(alias):]
+    return url
+
+
 def _split_csv(value: object) -> object:
     if isinstance(value, str):
         return [part.strip() for part in value.split(",") if part.strip()]
@@ -57,6 +70,9 @@ class Settings(BaseSettings):
     smtp_from: str = "noreply@example.com"
     admin_notify_email: str = ""
 
+    _normalize_db_url = field_validator("database_url", mode="before")(
+        lambda v: normalize_database_url(v) if isinstance(v, str) else v
+    )
     _split_lists = field_validator("cors_origins", "brand_source_terms", mode="before")(_split_csv)
 
     @model_validator(mode="after")
