@@ -11,18 +11,46 @@ import { AdminAuth } from '../core/admin-auth';
   imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="flex min-h-screen items-center justify-center bg-gray-100 p-4">
+    <main class="flex min-h-screen items-center justify-center bg-gray-100 p-4">
       <form class="card w-full max-w-sm space-y-4 p-6 shadow" (submit)="submit($event)">
         <h1 class="text-xl font-bold">Admin sign in</h1>
-        @if (expired) { <p class="rounded bg-amber-50 p-2 text-sm text-amber-800">Your session expired. Please sign in again.</p> }
-        <div><label class="label" for="email">Email</label>
-          <input id="email" name="email" type="email" autocomplete="username" class="input" required [(ngModel)]="email" /></div>
-        <div><label class="label" for="password">Password</label>
-          <input id="password" name="password" type="password" autocomplete="current-password" class="input" required [(ngModel)]="password" /></div>
-        @if (error()) { <p class="rounded bg-red-50 p-2 text-sm text-red-700" role="alert">{{ error() }}</p> }
-        <button type="submit" class="btn-primary w-full" [disabled]="busy()">{{ busy() ? 'Signing in…' : 'Sign in' }}</button>
+        @if (expired) {
+          <p class="rounded bg-amber-50 p-2 text-sm text-amber-800">
+            Your session expired. Please sign in again.
+          </p>
+        }
+        <div>
+          <label class="label" for="email">Email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="username"
+            class="input"
+            required
+            [(ngModel)]="email"
+          />
+        </div>
+        <div>
+          <label class="label" for="password">Password</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            class="input"
+            required
+            [(ngModel)]="password"
+          />
+        </div>
+        @if (error()) {
+          <p class="rounded bg-red-50 p-2 text-sm text-red-700" role="alert">{{ error() }}</p>
+        }
+        <button type="submit" class="btn-primary w-full" [disabled]="busy()">
+          {{ busy() ? 'Signing in…' : 'Sign in' }}
+        </button>
       </form>
-    </div>
+    </main>
   `,
 })
 export class AdminLogin {

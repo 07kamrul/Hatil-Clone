@@ -10,36 +10,29 @@
 | 5 | Public APIs | ✅ committed |
 | 6 | Angular public site | ✅ committed |
 | 7 | Angular admin panel | ✅ committed (in commit `4f0ec0b` + `9923a88`) |
-| 8 | SEO/SSR, optimisation, tests, README | 🟡 in progress (see Remaining work) |
+| 8 | SEO/SSR, optimisation, tests, README | ✅ committed (docker e2e still unverified) |
 
 Verified so far: 66 backend pytest tests and 17 frontend vitest tests pass, and the SSR build passes.
 SSR returns correct titles, OG tags, JSON-LD and 404 statuses. In the browser, these flows were checked:
 listing filters, product variants, add to cart, WhatsApp URL (product and cart, with customer fields),
 inquiry logging, admin login, product edit/save, and the banner form.
 
-## Remaining work (do these in order)
-1. **Re-run Lighthouse** on `/` (mobile) after the latest fixes, which were built but not yet re-audited:
-   WhatsApp button contrast (`#0e7a3e`), header badge aria-labels, 24px slider-dot targets, and `main.min-h-screen`
-   to stop the footer layout shift (CLS 0.365, all of it from the footer being pushed down).
-   Then audit `/products`, `/product/<slug>` and `/admin/login`. The target is above 90 everywhere.
-   Run a performance trace on the **production** SSR build (`node dist/frontend/server/server.mjs`), not `ng serve`.
-2. **Security and caching headers on the SSR server** (`frontend/src/server.ts`): X-Content-Type-Options,
-   Referrer-Policy, a CSP that allows OSM tiles (`*.tile.openstreetmap.org`) and `wa.me` links, and
-   `Cache-Control: no-store` for `/admin`.
-3. **docker-compose**: pass `PUBLIC_BASE_URL` to the `frontend` service (`app.config.server.ts` reads it),
-   then run `docker compose up --build` end to end (Docker wasn't available on the first machine).
-4. **README.md** at the root: run instructions (Docker and local), deploy steps (TLS in front of nginx,
-   rotate JWT_SECRET, set SUPER_ADMIN_*, S3 option), scraper usage and legal note, the rebrand flag (`BRAND_MODE`),
-   and an **Assumptions** list:
-   - BDT currency, English only
-   - Contact notification = SMTP email (optional) plus the dashboard unread badge
-   - "Popular" sort = product view count
-   - Leaflet + OpenStreetMap for maps; showroom coordinates are entered manually
-   - Neutral branding by default ("Casa Furnish"); scraped text has brand terms replaced
-   - Tokens stored in localStorage for the admin (short-lived access token, rotating refresh token with reuse detection)
-   - SQLite is used only for tests and local dev; production is PostgreSQL
-5. **Coverage**: `pytest --cov` (target 80%); add tests where it falls short.
-6. **Final commit**: `feat: phase 8 - SEO/SSR, optimisation, tests, README`.
+## Phase 8 results (2026-11-03)
+- **Lighthouse (mobile, production SSR build behind an nginx-equivalent proxy):** `/` 100/100/100/100;
+  `/products` and `/product/<slug>` were 98-99 a11y (footer `h3` heading order, now fixed to `h2`), all else 100;
+  `/admin/login` a11y fixed (`<main>` landmark, shell `<title>`), SEO 58 there is intentional (`noindex`).
+- **Performance trace** on `/` (4x CPU, Slow 4G): LCP 1.38 s, CLS 0.00 (the 0.365 footer shift is gone).
+- **SSR headers** in `frontend/src/server.ts`: CSP (OSM tiles, Google Fonts, wa.me), nosniff, Referrer-Policy,
+  X-Frame-Options SAMEORIGIN, `Cache-Control: no-store` on `/admin`; nginx hides the duplicate upstream copies.
+- **docker-compose** passes `PUBLIC_BASE_URL` to `frontend`.
+- **robots.txt**: the scraper now uses its own RFC 9309 matcher (`scripts/scraper/robots.py`, longest match wins).
+  The stdlib parser is first-match, so `Allow: /` unblocked everything; this broke 2 pipeline tests.
+- **Coverage:** 87% (`pytest --cov=app --cov=scripts`), 78 backend tests.
+- README.md written (run, deploy, scraper + legal note, BRAND_MODE, assumptions).
+
+## Remaining work
+1. **`docker compose up --build`** end to end. Docker Desktop was not running on the second machine either.
+2. Open issue A below (needs `import.db` and network access to the source site).
 
 ## Open issues
 - **A. Scraper failure classification.** The full run found 821 product URLs: 548 done, 537 unique products

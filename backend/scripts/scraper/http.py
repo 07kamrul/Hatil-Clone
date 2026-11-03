@@ -4,11 +4,11 @@ import logging
 import random
 import time
 from urllib.parse import urlsplit
-from urllib.robotparser import RobotFileParser
 
 import httpx
 
 from scraper.config import ScraperConfig
+from scraper.robots import RobotsRules
 
 log = logging.getLogger("scraper.http")
 
@@ -32,7 +32,7 @@ class PoliteClient:
         )
         self._sleep = sleep
         self._last_request: dict[str, float] = {}
-        self._robots: dict[str, RobotFileParser | None] = {}
+        self._robots: dict[str, RobotsRules | None] = {}
         self.request_count = 0
 
     def close(self) -> None:
@@ -47,7 +47,7 @@ class PoliteClient:
         parser = self._robots[host]
         return True if parser is None else parser.can_fetch(self.config.user_agent, url)
 
-    def _load_robots(self, host: str) -> RobotFileParser | None:
+    def _load_robots(self, host: str) -> RobotsRules | None:
         """Parse robots.txt when served. Asset hosts (e.g. S3 buckets) without one are treated as unrestricted."""
         try:
             res = self._request("GET", f"{host}/robots.txt", check_robots=False, retries=1)
@@ -55,9 +55,7 @@ class PoliteClient:
             return None
         if res.status_code != 200:
             return None
-        parser = RobotFileParser()
-        parser.parse(res.text.splitlines())
-        return parser
+        return RobotsRules.parse(res.text)
 
     # ---------- fetching ----------
     def get_text(self, url: str) -> str:

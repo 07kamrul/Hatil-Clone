@@ -15,7 +15,7 @@ import { Icon } from '../ui/icon';
     <footer class="mt-16 bg-gray-900 text-gray-300">
       <div class="container-x grid gap-8 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <h3 class="mb-3 text-lg font-semibold text-white">{{ s().site_name }}</h3>
+          <h2 class="mb-3 text-lg font-semibold text-white">{{ s().site_name }}</h2>
           <p class="text-sm">{{ s().footer_text }}</p>
           <div class="mt-4 flex gap-3 text-sm">
             @if (s().social_facebook) { <a [href]="s().social_facebook" rel="noopener noreferrer" target="_blank" class="hover:text-white">Facebook</a> }
@@ -25,13 +25,13 @@ import { Icon } from '../ui/icon';
           </div>
         </div>
         <div>
-          <h3 class="mb-3 font-semibold text-white">Company</h3>
+          <h2 class="mb-3 font-semibold text-white">Company</h2>
           <ul class="space-y-2 text-sm">
             @for (p of pages(); track p.slug) { <li><a [routerLink]="['/page', p.slug]" class="hover:text-white">{{ p.title }}</a></li> }
           </ul>
         </div>
         <div>
-          <h3 class="mb-3 font-semibold text-white">Help</h3>
+          <h2 class="mb-3 font-semibold text-white">Help</h2>
           <ul class="space-y-2 text-sm">
             <li><a routerLink="/contact" class="hover:text-white">Contact us</a></li>
             <li><a routerLink="/faq" class="hover:text-white">FAQ</a></li>
@@ -40,7 +40,7 @@ import { Icon } from '../ui/icon';
           </ul>
         </div>
         <div>
-          <h3 class="mb-3 font-semibold text-white">Get in touch</h3>
+          <h2 class="mb-3 font-semibold text-white">Get in touch</h2>
           <ul class="space-y-2 text-sm">
             <li class="flex gap-2"><app-icon name="phone" [size]="16" /> {{ s().hotline }}</li>
             <li class="flex gap-2"><app-icon name="mail" [size]="16" /> {{ s().contact_email }}</li>
