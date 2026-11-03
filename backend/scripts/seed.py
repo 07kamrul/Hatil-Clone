@@ -22,8 +22,21 @@ from app.core.site_settings import DEFAULT_SETTINGS
 from app.core.text import slugify
 from app.db.session import SessionLocal
 from app.models import (
-    AdminUser, Banner, BlogPost, Category, Color, Faq, Material, Page, Product, ProductImage,
-    ProductSpec, ProductVariant, Room, Setting, Showroom,
+    AdminUser,
+    Banner,
+    BlogPost,
+    Category,
+    Color,
+    Faq,
+    Material,
+    Page,
+    Product,
+    ProductImage,
+    ProductSpec,
+    ProductVariant,
+    Room,
+    Setting,
+    Showroom,
 )
 from app.storage import get_storage
 from scripts import seed_data as data

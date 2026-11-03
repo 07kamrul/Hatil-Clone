@@ -1,8 +1,12 @@
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+# Development-only placeholders; production startup refuses to run with them.
+_DEV_JWT_SECRET = "dev-only-insecure-jwt-secret-change-me-0000"  # noqa: S105
+_DEV_ADMIN_PASSWORD = "ChangeMe123!"  # noqa: S105
 
 
 def _split_csv(value: object) -> object:
@@ -17,13 +21,13 @@ class Settings(BaseSettings):
     environment: str = "development"
     database_url: str = "postgresql+psycopg://furniture:furniture@localhost:5432/furniture"
 
-    jwt_secret: str = Field(default="change-me-in-production-please-32chars", min_length=32)
+    jwt_secret: str = Field(default=_DEV_JWT_SECRET, min_length=32)
     jwt_algorithm: str = "HS256"
     access_token_minutes: int = 15
     refresh_token_days: int = 7
 
     super_admin_email: str = "admin@example.com"
-    super_admin_password: str = "ChangeMe123!"
+    super_admin_password: str = _DEV_ADMIN_PASSWORD
 
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:4200", "http://localhost"]
     public_base_url: str = "http://localhost"
@@ -54,6 +58,13 @@ class Settings(BaseSettings):
     admin_notify_email: str = ""
 
     _split_lists = field_validator("cors_origins", "brand_source_terms", mode="before")(_split_csv)
+
+    @model_validator(mode="after")
+    def _no_placeholder_secrets_in_production(self) -> "Settings":
+        if self.environment == "production":
+            if self.jwt_secret == _DEV_JWT_SECRET or self.super_admin_password == _DEV_ADMIN_PASSWORD:
+                raise ValueError("Set JWT_SECRET and SUPER_ADMIN_PASSWORD before running in production")
+        return self
 
     @property
     def is_production(self) -> bool:

@@ -1,0 +1,21 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "scripts"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S"]
+ignore = ["S101", "B008", "UP046"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "E501"]
+"app/schemas/auth.py" = ["S105"]
+"scripts/seed_data.py" = ["E501"]
+
+[tool.coverage.run]
+source = ["app", "scripts/scraper"]
+omit = ["app/storage/s3.py"]
