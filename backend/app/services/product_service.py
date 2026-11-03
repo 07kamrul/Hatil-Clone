@@ -85,6 +85,14 @@ class ProductService:
             raise NotFoundError("Product not found")
         return [product_card(p) for p in self.repo.related(product, limit)]
 
+    def details_by_ids(self, ids: list[int]) -> list[ProductDetail]:
+        details = []
+        for product_id in ids:
+            product = self.repo.get_detail(id=product_id, is_published=True)
+            if product is not None:
+                details.append(self._to_detail(product))
+        return details
+
     def by_ids(self, ids: list[int]) -> list[ProductCard]:
         return [product_card(p) for p in self.repo.by_ids_ordered(ids)]
 

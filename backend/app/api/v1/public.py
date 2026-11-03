@@ -32,6 +32,7 @@ router = APIRouter()
 Filters = Annotated[ProductFilters, Depends(product_filters)]
 Paging = Annotated[PageParams, Depends()]
 MAX_BY_IDS = 24
+MAX_COMPARE = 4
 
 
 def _client_ip(request: Request) -> str | None:
@@ -57,6 +58,16 @@ def products_by_ids(db: DbSession, ids: str = Query(..., description="Comma-sepa
     except ValueError as exc:
         raise ValidationAppError("ids must be integers") from exc
     return ProductService(db).by_ids(parsed[:MAX_BY_IDS])
+
+
+@router.get("/products/compare", response_model=list[ProductDetail], tags=["catalog"])
+def compare_products(db: DbSession, ids: str = Query(..., description="Comma-separated product ids (max 4)")) -> list[ProductDetail]:
+    """Full details for the compare table; does not count as a product view."""
+    try:
+        parsed = [int(i) for i in ids.split(",") if i.strip()]
+    except ValueError as exc:
+        raise ValidationAppError("ids must be integers") from exc
+    return ProductService(db).details_by_ids(parsed[:MAX_COMPARE])
 
 
 @router.get("/products/{slug}", response_model=ProductDetail, tags=["catalog"])

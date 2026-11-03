@@ -51,7 +51,8 @@ def placeholder_image(text: str, size: tuple[int, int], color: str) -> bytes:
     draw = ImageDraw.Draw(img)
     w, h = size
     draw.rectangle([w * 0.08, h * 0.08, w * 0.92, h * 0.92], outline="#ffffff", width=max(2, w // 200))
-    draw.text((w * 0.12, h * 0.45), text, fill="#ffffff", font_size=max(16, w // 22))
+    if text:
+        draw.text((w * 0.12, h * 0.45), text, fill="#ffffff", font_size=max(16, w // 22))
     out = io.BytesIO()
     img.save(out, format="PNG")
     return out.getvalue()
@@ -101,6 +102,13 @@ def seed_taxonomy(db: Session) -> None:
         _get_or_create(db, Material, slugify(name), name=name)
 
 
+def seed_category_images(db: Session) -> None:
+    storage = get_storage()
+    for i, category in enumerate(db.scalars(select(Category).where(Category.image.is_(None)))):
+        img = storage.save_image(placeholder_image("", (800, 600), PALETTE[i % len(PALETTE)]), "categories", category.slug)
+        category.image = img.url
+
+
 def seed_content(db: Session) -> None:
     for title, slug, body in data.PAGES:
         _get_or_create(db, Page, slug, title=title, body_html=body, seo_title=title)
@@ -129,7 +137,7 @@ def seed_banners(db: Session) -> None:
     groups = [(BannerPlacement.HERO, data.HERO_BANNERS, (1600, 600)), (BannerPlacement.OFFER, data.OFFER_BANNERS, (800, 400))]
     for placement, banners, size in groups:
         for i, (title, subtitle, link, button) in enumerate(banners):
-            img = storage.save_image(placeholder_image(title, size, PALETTE[i % len(PALETTE)]), "banners", title)
+            img = storage.save_image(placeholder_image("", size, PALETTE[i % len(PALETTE)]), "banners", title)
             db.add(Banner(title=title, subtitle=subtitle, image=img.url, link_url=link, button_text=button,
                           placement=placement, sort_order=i))
 
@@ -174,6 +182,7 @@ def run(demo: bool) -> None:
         seed_admin(db)
         seed_settings(db)
         seed_taxonomy(db)
+        seed_category_images(db)
         seed_content(db)
         seed_banners(db)
         if demo:

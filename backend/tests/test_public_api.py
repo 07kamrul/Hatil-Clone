@@ -193,3 +193,11 @@ def test_public_posts_are_rate_limited(client) -> None:
     finally:
         limiter.enabled = False
     assert codes[:5] == [201] * 5 and 429 in codes[5:]
+
+
+def test_compare_returns_details_without_counting_views(client, auth, make_category, make_product) -> None:
+    d = seed_catalog(client, auth, make_category, make_product)
+    res = client.get(f"{P}/products/compare?ids={d['a']['id']},{d['hidden']['id']},{d['b']['id']}").json()
+    assert [p["name"] for p in res] == ["Aria Sofa", "Boston Sofa"]
+    assert res[0]["materials"][0]["slug"] == "solid-wood"
+    assert client.get(f"{P}/admin/products/{d['a']['id']}", headers=auth).json()["view_count"] == 0
