@@ -31,8 +31,33 @@ inquiry logging, admin login, product edit/save, and the banner form.
 - README.md written (run, deploy, scraper + legal note, BRAND_MODE, assumptions).
 
 ## Remaining work
-1. Open issue A below: re-run `python -m scripts.scraper run --resume` against the source. 404/410 URLs are
-   now recorded as `gone` (never retried), so the remaining `failed` rows will show their real causes.
+1. **Run the production import** following `docs/PRODUCTION_IMPORT.md` (needs Dokploy access; backup first).
+   Then fill in its section 6 and do the live spot-checks.
+2. **Scrape the non-product content** (not built yet). Structures found on 2026-11-04, one request per type:
+   - *Showrooms*: 71 URLs `/showrooms/<slug>` (use the URL slug, not `SeName`). Flight data has `showroomInfo`
+     `{Name, Latitude, Longitude, Address, Division, Mobile, OffDays, VisitingHours, Description:"$ref"}`; the
+     flight JSON-LD adds `addressLocality`, `telephone`. Maps to `Showroom` (city = locality, else Division).
+   - *Static pages*: body is in flight `dangerouslySetInnerHTML.__html` (may be a `$xx` text-row ref). Take an
+     allowlist from the sitemap's 74 "other" URLs: `about-hatil, company-profile, contact-us, faq, help-center,
+     hatil-policies, privacy-policy, return-policy, billing-terms-and-conditions, our-team, license-certificates,
+     become-franchise-partner`. Skip `careers`, `catalogues` and the listing pages. `faq` could feed `Faq`.
+   - *Banners*: homepage flight has `homePageCard` objects: `Type:"MenuSlider"` = hero slides
+     (`HomePageCardImages[{Title, Description, ImageUrl, UrlLink, DisplayOrder}]`), `ImageGallery*` = promo tiles.
+     `Banner` has no slug, so create-if-missing by (placement, title) and never update or delete existing rows.
+   - *Blog*: 788 URLs `/blog/<slug>`. This is a separate WordPress site (`/banglablog/wp-content`, mostly Bengali):
+     no flight data, a Yoast JSON-LD `@graph` (headline, datePublished, author, image) and the body in the DOM.
+   - *Category images*: not found in any page checked. The category tree currently comes only from product
+     breadcrumbs (names and slugs).
+   Put pure parsers in a new `scripts/scraper/content.py`, upserts by slug in a `content_import.py`, a `content`
+   CLI subcommand, and fixture tests like `tests/test_scraper_sets.py` (synthetic flight payloads).
+3. **Known quirk**: `--category` only matches a product path slug (`sofa`), not a listing slug (`2-seater-sofa`):
+   `ScrapeRun.targets()` filters on `ScrapeLog.category_slug`, which `discover()` does not apply to listing links.
+   `--all` is unaffected. Fix by dropping that filter when `urls` is given.
+
+**2026-11-04 scraper changes** (tests 126 passed): set pages parse (`tests/test_scraper_sets.py`); single-segment
+model pages are discovered, so 948 product URLs instead of 821; rate capped at 1 req/s (`MAX_REQUESTS_PER_SECOND`);
+`SCRAPER_MAX_IMAGES` env (default 30); extra retry tests (429 `Retry-After`, 5xx recovery). Dry runs: sofa 9/10
+created (1 discontinued), bedroom 10/10, a re-run created 0 and changed no rows or files.
 
 ## Docker verified (2026-11-03, Colima)
 All 4 services are healthy, the entrypoint migrates and seeds, the API, SSR and admin login (JWT) work, each

@@ -30,7 +30,8 @@ function readBrowserApiBase(raw: string): string {
 
 const BROWSER_API_BASE = readBrowserApiBase(process.env['API_BASE_URL'] ?? '');
 const API_ORIGIN = BROWSER_API_BASE ? new URL(BROWSER_API_BASE).origin : '';
-const withApiOrigin = (directive: string): string => (API_ORIGIN ? `${directive} ${API_ORIGIN}` : directive);
+const withApiOrigin = (directive: string): string =>
+  API_ORIGIN ? `${directive} ${API_ORIGIN}` : directive;
 
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
@@ -121,7 +122,9 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
       throw error;
     }
 
-    console.log(`Node Express server listening on port ${port} (API base: ${BROWSER_API_BASE || 'same-origin'})`);
+    console.log(
+      `Node Express server listening on port ${port} (API base: ${BROWSER_API_BASE || 'same-origin'})`,
+    );
   });
 }
 

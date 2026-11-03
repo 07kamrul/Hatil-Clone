@@ -2,6 +2,8 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+MAX_REQUESTS_PER_SECOND = 1.0  # politeness floor: SCRAPER_RPS above this is clamped
+
 
 @dataclass(frozen=True)
 class ScraperConfig:
@@ -12,13 +14,13 @@ class ScraperConfig:
         "SCRAPER_USER_AGENT",
         "CatalogImporter/1.0 (+catalog data import; contact: admin@example.com; respects robots.txt)",
     )
-    requests_per_second: float = float(os.getenv("SCRAPER_RPS", "1.5"))
+    requests_per_second: float = float(os.getenv("SCRAPER_RPS", "1.0"))
     max_retries: int = int(os.getenv("SCRAPER_MAX_RETRIES", "4"))
     backoff_base: float = float(os.getenv("SCRAPER_BACKOFF", "2.0"))
     timeout: float = float(os.getenv("SCRAPER_TIMEOUT", "30"))
     max_attempts_per_url: int = 3
     max_image_bytes: int = 15 * 1024 * 1024
-    max_images_per_product: int = 8
+    max_images_per_product: int = int(os.getenv("SCRAPER_MAX_IMAGES", "30"))
     use_playwright: bool = os.getenv("SCRAPER_PLAYWRIGHT", "auto") != "off"
     output_dir: Path = Path(os.getenv("SCRAPER_OUTPUT_DIR", "scraper_output"))
     # Path segments that are never product categories.
@@ -26,4 +28,5 @@ class ScraperConfig:
 
     @property
     def min_interval(self) -> float:
-        return 1.0 / max(self.requests_per_second, 0.1)
+        """Seconds between requests to one host. Slower than 1 req/s is allowed; faster never is."""
+        return 1.0 / min(max(self.requests_per_second, 0.1), MAX_REQUESTS_PER_SECOND)

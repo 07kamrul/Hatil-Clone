@@ -10,6 +10,9 @@ from scraper.config import ScraperConfig
 _LOC = re.compile(r"<(?:\w+:)?loc>\s*([^<\s]+)\s*</(?:\w+:)?loc>", re.I)
 _SITEMAP_INDEX = re.compile(r"<(?:\w+:)?sitemapindex", re.I)
 _SLUG_SEGMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9\-_.%]*$")
+# A name followed by a 2-3 digit model number: `adept-165`, `arnica-137lobelia-131-...-set`. Static and listing
+# pages (`about-hatil`, `non-lacquer-2-door-wardrobe`) have none; a rare false positive just lands in the report.
+_MODEL_SLUG = re.compile(r"^[a-z][a-z-]*-\d{2,3}[a-z0-9-]*$", re.I)
 
 
 def parse_sitemap(xml: str) -> tuple[list[str], list[str]]:
@@ -35,6 +38,8 @@ def classify_url(url: str, config: ScraperConfig) -> str:
         return "product"
     if len(segments) == 1 and first.endswith("-price-in-bangladesh"):
         return "category"
+    if len(segments) == 1 and _MODEL_SLUG.match(first):
+        return "product"  # model page without a category prefix, e.g. /adept-165
     return "other"
 
 

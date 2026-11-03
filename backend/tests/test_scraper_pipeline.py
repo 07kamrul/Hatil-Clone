@@ -102,3 +102,16 @@ def test_category_mode_filters_urls(tmp_path: Path, engine) -> None:  # noqa: AN
     factory = sessionmaker(bind=engine, expire_on_commit=False)
     report = ScrapeRun(config, factory, make_client(config, make_transport()[0])).run("category", category="sofa")
     assert report.attempted == 1 and report.created == 1
+
+
+@pytest.mark.parametrize("rps", [1.0, 1.5, 5, 1000])
+def test_request_rate_is_never_faster_than_one_per_second(rps: float) -> None:
+    assert replace(ScraperConfig(), requests_per_second=rps).min_interval >= 1.0
+
+
+def test_slower_request_rates_are_honoured() -> None:
+    assert replace(ScraperConfig(), requests_per_second=0.5).min_interval == 2.0
+
+
+def test_default_config_respects_the_rate_floor() -> None:
+    assert ScraperConfig().min_interval >= 1.0

@@ -77,6 +77,15 @@ def test_parse_sitemap_and_index() -> None:
     ("https://shop.example.com/sofa-price-in-bangladesh", "category"),
     ("https://shop.example.com/about-us", "other"),
     ("https://shop.example.com/", "other"),
+    # Model pages live at a single segment (no category prefix); static/listing pages carry no model number.
+    ("https://shop.example.com/adept-165", "product"),
+    ("https://shop.example.com/arnica-137lobelia-131-director-table-side-table-set", "product"),
+    ("https://shop.example.com/vie-225-and-outfit-225-6-chair-and-1-table-dining-set", "product"),
+    ("https://shop.example.com/non-lacquer-2-door-wardrobe", "other"),
+    ("https://shop.example.com/center-table-with-glass-top", "other"),
+    ("https://shop.example.com/billing-terms-and-conditions", "other"),
+    ("https://shop.example.com/book-shelves-price-in-bangladesh&", "other"),
+    ("https://shop.example.com/dining-table-120-price-in-bangladesh", "category"),
 ])
 def test_classify_url(url: str, kind: str) -> None:
     assert classify_url(url, CONFIG) == kind

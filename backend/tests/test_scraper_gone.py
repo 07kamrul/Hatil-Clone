@@ -124,3 +124,43 @@ def test_category_page_404_mid_pagination_keeps_found_links(tmp_path: Path, engi
 
     assert f"{CATEGORY_URL}?page=2" in calls  # pagination reached page 2 and stopped there
     assert report.discovered == 1 and report.created == 1 and report.failed == 0
+
+
+def _flaky_transport(first_status: int, headers: dict[str, str] | None = None) -> tuple[httpx.MockTransport, list[str]]:
+    """Fails once with `first_status`, then serves the product page."""
+    calls: list[str] = []
+    product_html = (FIXTURES / "product_flight.html").read_text(encoding="utf-8")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        if url == f"{SITE}/robots.txt":
+            return httpx.Response(200, text="User-agent: *\nAllow: /\n")
+        calls.append(url)
+        if len(calls) == 1:
+            return httpx.Response(first_status, headers=headers or {})
+        return httpx.Response(200, text=product_html)
+
+    return httpx.MockTransport(handler), calls
+
+
+@pytest.mark.parametrize("status", [429, 500, 502, 503, 504])
+def test_transient_status_recovers_on_retry(tmp_path: Path, status: int) -> None:
+    config = make_config(tmp_path)
+    transport, calls = _flaky_transport(status)
+
+    html = make_client(config, transport).get_text(PRODUCT_URL)
+
+    assert html.strip()
+    assert calls.count(PRODUCT_URL) == 2
+
+
+def test_rate_limited_response_honours_retry_after(tmp_path: Path) -> None:
+    config = make_config(tmp_path)
+    transport, calls = _flaky_transport(429, {"Retry-After": "7"})
+    client = make_client(config, transport)
+    sleeps: list[float] = []
+    client._sleep = sleeps.append  # noqa: SLF001
+
+    client.get_text(PRODUCT_URL)
+
+    assert 7 in sleeps and calls.count(PRODUCT_URL) == 2

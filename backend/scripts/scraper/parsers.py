@@ -141,7 +141,62 @@ def parse_product(html: str, url: str) -> ScrapedProduct:
         refs = text_rows(flight)
         return _from_details(details, find_json(flight, "productConfigs") or [],
                              find_json(flight, "productServiceInfoModel") or [], refs, url)
+    if isinstance(details, dict) and (details.get("SofaSetInfo") or details.get("SetType")):
+        return _from_set_details(details, find_json(flight, "productServiceInfoModel") or [],
+                                 text_rows(flight), url)
     return parse_product_dom(html, url)
+
+
+def _compose_body(sections: dict[str, str | None], description: str | None, h1: str | None) -> str | None:
+    """Features + (substantial) description + H1 block, then care instructions under a heading."""
+    features = _clean_html(sections.get("features"))
+    long_description = description if description and len(strip_tags(description)) > 40 else None
+    body = "".join(part for part in (features, long_description, h1) if part) or description
+    care = _clean_html(sections.get("furniture care information"))
+    return (body or "") + "<h3>Care</h3>" + care if care else body
+
+
+def _from_set_details(d: dict, info: list, refs: dict[str, str], url: str) -> ScrapedProduct:
+    """Bundle pages (sofa sets, bedroom/divan sets): a flat PascalCase schema.
+
+    Sofa sets nest the core fields under `SofaSetInfo` (price = `BasePrice`); bedroom/divan sets keep them
+    at the top level (price = `TotalPrice`). A set has no SKU of its own, so one is derived from the source
+    product id (stable across runs, which keeps the SKU upsert idempotent). Discounts are not applied: the
+    samples seen carry none and it is unknown whether the price is pre- or post-discount.
+    """
+    core = d.get("SofaSetInfo") or d
+    product_id = core.get("ProductId") or d.get("ProductId")
+    if not product_id:
+        raise ParseError(f"Set page has no product id: {url}")
+    price = _money(core.get("BasePrice") or d.get("TotalPrice"))
+    if price is None:
+        raise SkipProduct(f"No price on source (call for price): {url}")
+
+    sections = {str(s.get("Title") or "").strip().lower(): _resolve(s.get("Description"), refs)
+                for s in info if isinstance(s, dict)}
+    description = _clean_html(_resolve(core.get("FullDescription"), refs))
+    h1 = _clean_html(_resolve((d.get("ProductH1TagsModel") or {}).get("h1_content"), refs))
+
+    crumbs = [str(c.get("Name") or "").strip() for c in (d.get("Breadcrumb") or {}).get("CategoryBreadcrumb") or []]
+    crumbs = [c for c in crumbs if c]
+    leaf = str(core.get("BreadcrumbCategoryName") or d.get("SetType") or "").strip().title()
+    if leaf and leaf.lower() not in (c.lower() for c in crumbs):
+        crumbs.append(leaf)
+
+    parts = [f"{item.get('Quantity') or 1} x {' '.join(str(item.get('ItemTitle') or item.get('SizeTag') or '').split())}"
+             for item in d.get("ProductSetItemModel") or d.get("SofaItemsModel") or []
+             if item.get("ItemTitle") or item.get("SizeTag")]
+    return ScrapedProduct(
+        source_url=url, name=str(core.get("ProductTitle") or "").strip(), sku=f"SRC-{product_id}",
+        slug=urlsplit(url).path.rstrip("/").split("/")[-1].lower(), price=price,
+        category_path=crumbs, short_desc=strip_tags(_resolve(core.get("ShortDescription"), refs)) or None,
+        description_html=_compose_body(sections, description, h1),
+        warranty=strip_tags(sections.get("warranty"))[:255] or None,
+        specs=[("Set includes", ", ".join(parts))] if parts else [],
+        images=_unique(p.get("ImageUrl") for p in d.get("PictureModel") or []),
+        meta_title=core.get("MetaTitle"), meta_description=core.get("MetaDescription"),
+        meta_keywords=core.get("MetaKeywords"),
+    )
 
 
 def _clean_html(html: str | None) -> str | None:
@@ -173,15 +228,10 @@ def _from_details(d: dict, configs: list, info: list, refs: dict[str, str], url:
     sections = {str(s.get("Title") or "").strip().lower(): _resolve(s.get("Description"), refs) for s in info
                 if isinstance(s, dict)}
     description = _clean_html(_resolve(d.get("full_description"), refs))
-    features = _clean_html(sections.get("features"))
     h1 = _clean_html((d.get("product_h1_tags_model") or {}).get("h1_content"))
-    body = "".join(p for p in (features, description if description and len(strip_tags(description)) > 40 else None,
-                               h1) if p) or description
-    care = _clean_html(sections.get("furniture care information"))
-    if care:
-        body = (body or "") + "<h3>Care</h3>" + care
+    body = _compose_body(sections, description, h1)
 
-    crumbs = [c.get("name", "").strip() for c in (d.get("breadcrumb") or {}).get("category_breadcrumb") or []]
+    crumbs =[c.get("name", "").strip() for c in (d.get("breadcrumb") or {}).get("category_breadcrumb") or []]
     crumbs = [c for c in crumbs if c]
     if d.get("breadcrumb_category_name"):
         leaf = str(d["breadcrumb_category_name"]).strip().title()
