@@ -20,6 +20,8 @@ Two Dokploy **Applications** (no compose, no nginx; Traefik routes). Postgres is
 1. Create Application `hatil-frontend` -> Build Path `/`, Docker File `frontend/Dockerfile`,
    **Docker Context Path `frontend`**.
 2. Environment: paste `frontend.env`. The API URL is runtime-only; nothing is baked at build time.
+   `NG_ALLOWED_HOSTS` must list the public domain, otherwise SSR answers
+   `Header "host" with value "..." is not allowed`.
 3. Domains: `hatil.anshintech.dpdns.org`, container port **4001** (= `PORT` in frontend.env), HTTPS, Let's Encrypt.
 4. Deploy the backend first, then the frontend.
 
