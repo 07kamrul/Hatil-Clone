@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+/* Brand tokens — overridden at runtime from admin settings (primary_color / accent_color). */
+@theme {
+  --color-brand: var(--brand-primary, #8a5a2b);
+  --color-brand-dark: var(--brand-primary-dark, #6b4420);
+  --color-accent: var(--brand-accent, #1f2937);
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+body { @apply bg-white text-gray-800 antialiased; }
+
+@utility container-x { @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8; }
+@utility btn { @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50; }
+@utility btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 bg-brand text-white hover:bg-brand-dark; }
+@utility btn-outline { @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 border border-gray-300 bg-white text-gray-800 hover:border-brand hover:text-brand; }
+@utility btn-whatsapp { @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 bg-[#25D366] text-white hover:bg-[#1da851]; }
+@utility btn-danger { @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 bg-red-600 text-white hover:bg-red-700; }
+@utility input { @apply w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none; }
+@utility label { @apply mb-1 block text-sm font-medium text-gray-700; }
+@utility card { @apply rounded-lg border border-gray-200 bg-white; }
+.prose-content h2 { @apply mt-6 mb-2 text-xl font-semibold; }
+.prose-content h3 { @apply mt-4 mb-2 text-lg font-semibold; }
+.prose-content p { @apply mb-3 leading-relaxed; }
+.prose-content ul { @apply mb-3 list-disc pl-6; }
+.prose-content ol { @apply mb-3 list-decimal pl-6; }
+.prose-content a { @apply text-brand underline; }
+.prose-content img { @apply my-4 h-auto max-w-full rounded; }
+.prose-content table { @apply mb-4 w-full border-collapse text-sm; }
+.prose-content td, .prose-content th { @apply border border-gray-200 px-3 py-2; }

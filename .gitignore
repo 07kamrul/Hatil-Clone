@@ -1,0 +1,13 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.coverage
+htmlcov/
+backend/uploads/
+backend/scraper_output/
+node_modules/
+frontend/dist/
+frontend/.angular/
+*.db
