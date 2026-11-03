@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
 
-from app.api.v1 import auth
+from app.api.v1 import auth, public
 from app.api.v1.admin import router as admin_router
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
@@ -73,7 +73,7 @@ def create_app() -> FastAPI:
 
     app.include_router(auth.router, prefix=API_PREFIX)
     app.include_router(admin_router, prefix=API_PREFIX)
-    _include_public(app)
+    app.include_router(public.router, prefix=API_PREFIX)
 
     if settings.storage_backend == "local":
         # In Docker nginx serves /uploads directly; this mount covers local development.
@@ -81,14 +81,6 @@ def create_app() -> FastAPI:
         upload_dir.mkdir(parents=True, exist_ok=True)
         app.mount(settings.upload_url_prefix, StaticFiles(directory=upload_dir), name="uploads")
     return app
-
-
-def _include_public(app: FastAPI) -> None:
-    try:
-        from app.api.v1.public import router as public_router
-    except ImportError:  # public API is added in a later module
-        return
-    app.include_router(public_router, prefix=API_PREFIX)
 
 
 app = create_app()
