@@ -15,7 +15,20 @@ const app = express();
 const angularApp = new AngularNodeAppEngine();
 
 // Runtime API base the browser should call (e.g. https://api.example.com/api/v1). Unset = same-origin /api/v1.
-const BROWSER_API_BASE = (process.env['API_BASE_URL'] ?? '').replace(/\/$/, '');
+// An invalid value is logged and ignored (same-origin fallback) so the server still starts instead of 502ing.
+function readBrowserApiBase(raw: string): string {
+  const value = raw.trim().replace(/\/$/, '');
+  if (!value) return '';
+  try {
+    new URL(value);
+    return value;
+  } catch {
+    console.error(`[server] ignoring invalid API_BASE_URL "${value}"; expected an absolute URL`);
+    return '';
+  }
+}
+
+const BROWSER_API_BASE = readBrowserApiBase(process.env['API_BASE_URL'] ?? '');
 const API_ORIGIN = BROWSER_API_BASE ? new URL(BROWSER_API_BASE).origin : '';
 const withApiOrigin = (directive: string): string => (API_ORIGIN ? `${directive} ${API_ORIGIN}` : directive);
 
@@ -108,7 +121,7 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
       throw error;
     }
 
-    console.log(`Node Express server listening on http://localhost:${port}`);
+    console.log(`Node Express server listening on port ${port} (API base: ${BROWSER_API_BASE || 'same-origin'})`);
   });
 }
 

@@ -48,3 +48,21 @@ def test_production_accepts_real_secrets():
 def test_development_ignores_placeholder_password():
     settings = Settings(environment="development", jwt_secret=_REAL_SECRET, super_admin_password="__strong_password__")
     assert settings.super_admin_password == "__strong_password__"
+
+
+from app.core.config import find_url_placeholder  # noqa: E402
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("postgresql+psycopg://postgres:__DB_PASSWORD__@h:5432/hatil", "__DB_PASSWORD__"),
+        ("postgresql://u:p@__DB_HOST__:5432/db", "__DB_HOST__"),
+    ],
+)
+def test_find_url_placeholder_reports_template_token(url, expected):
+    assert find_url_placeholder(url) == expected
+
+
+def test_find_url_placeholder_returns_none_for_real_url():
+    assert find_url_placeholder("postgresql://u:s3cr_et@h:5432/db") is None

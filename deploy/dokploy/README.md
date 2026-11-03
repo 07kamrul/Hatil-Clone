@@ -26,3 +26,15 @@ Two Dokploy **Applications** (no compose, no nginx; Traefik routes). Postgres is
 ## Check
 `curl https://hatilapi.anshintech.dpdns.org/api/v1/health` -> `{"status":"ok"}`;
 open the site, then `/admin/login`.
+
+## Troubleshooting: Cloudflare "502 Bad gateway"
+Traefik reached the server but no healthy container answered. Bypass Cloudflare to confirm:
+`curl -sk --resolve hatil.anshintech.dpdns.org:443:<server-ip> https://hatil.anshintech.dpdns.org/`
+(a 502 here means the app container is down, not Cloudflare). Then, per app, in Dokploy:
+1. **Deployments**: did the last build succeed? A failed build leaves no running container.
+2. **Logs** (backend): `[entrypoint] DATABASE_URL still contains the template value __X__` means fill the env var.
+   `database not reachable: ...` after 60s means check the password (URL-encode `@ : / # %`),
+   that Postgres listens on the public IP (`listen_addresses`, `pg_hba.conf`), the firewall on 5432, and that db `hatil` exists.
+3. **Logs** (frontend): should print `listening on port 4000 (API base: ...)`. `ignoring invalid API_BASE_URL`
+   means fix `frontend.env`; the site still serves, using same-origin API calls.
+4. **Domains**: container port must be 8000 (backend) / 4000 (frontend). After changing env or domains, **Redeploy**.

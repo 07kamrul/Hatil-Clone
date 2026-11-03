@@ -1,3 +1,4 @@
+import re
 from functools import lru_cache
 from typing import Annotated
 
@@ -20,6 +21,15 @@ def normalize_database_url(url: str) -> str:
         if url.startswith(alias):
             return _PG_SCHEME + url[len(alias):]
     return url
+
+
+_URL_TEMPLATE_TOKEN = re.compile(r"__[A-Za-z0-9_]*[A-Za-z0-9]__")
+
+
+def find_url_placeholder(url: str) -> str | None:
+    """Return the first unfilled `__TOKEN__` in a URL (e.g. `__DB_PASSWORD__`), else None."""
+    match = _URL_TEMPLATE_TOKEN.search(url)
+    return match.group(0) if match else None
 
 
 # Values copied unedited from .env.example / deploy/dokploy/backend.env.example.

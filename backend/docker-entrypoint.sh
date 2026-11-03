@@ -17,7 +17,13 @@ wait_for_db() {
 import os, sys, time
 from sqlalchemy import create_engine, text
 
-from app.core.config import normalize_database_url
+from app.core.config import find_url_placeholder, normalize_database_url
+
+placeholder = find_url_placeholder(os.environ["DATABASE_URL"])
+if placeholder:
+    print(f"[entrypoint] DATABASE_URL still contains the template value {placeholder}; "
+          "set the real value in the deploy environment", file=sys.stderr)
+    sys.exit(1)
 
 deadline = time.monotonic() + int(os.environ.get("DB_WAIT_SECONDS", "60"))
 engine = create_engine(normalize_database_url(os.environ["DATABASE_URL"]), pool_pre_ping=True)
