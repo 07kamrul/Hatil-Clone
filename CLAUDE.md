@@ -20,7 +20,7 @@ python -m venv .venv && .venv/Scripts/pip install -r requirements-dev.txt   # Wi
 export DATABASE_URL=sqlite:///dev.db UPLOAD_DIR=uploads                   # or a postgres URL
 .venv/Scripts/alembic upgrade head && .venv/Scripts/python -m scripts.seed --demo
 .venv/Scripts/python -m uvicorn app.main:app --port 8000                  # docs at /api/docs
-.venv/Scripts/python -m pytest -q          # 85 tests, SQLite in-memory
+.venv/Scripts/python -m pytest -q          # 126 tests, SQLite in-memory
 .venv/Scripts/ruff check app scripts tests
 .venv/Scripts/python -m scripts.scraper run --all | --category sofa | --resume [--limit N]
 
