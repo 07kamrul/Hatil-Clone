@@ -35,6 +35,13 @@ PY
   log "database is ready"
 }
 
+ensure_secrets() {
+  # Placeholder/missing JWT_SECRET or SUPER_ADMIN_PASSWORD -> generated once, kept in the DB.
+  log "ensuring secrets"
+  exports="$(python -m scripts.ensure_secrets)"
+  eval "$exports"
+}
+
 migrate() {
   log "alembic upgrade head"
   alembic upgrade head
@@ -56,6 +63,7 @@ serve() {
 }
 
 wait_for_db
+ensure_secrets
 
 if [ "$#" -eq 0 ] || [ "$1" = "serve" ]; then
   migrate
