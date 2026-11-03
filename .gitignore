@@ -11,3 +11,6 @@ node_modules/
 frontend/dist/
 frontend/.angular/
 *.db
+uploads_import/
+backend/uploads_import/
+backend/import.db

@@ -16,7 +16,7 @@ from app.core.config import get_settings
 from app.core.enums import StockStatus
 from app.core.errors import ValidationAppError
 from app.core.text import rebrand, sanitize_html, slugify
-from app.models import Category, Color, Material, Product, ProductImage, ProductSpec, Room
+from app.models import Category, Color, Material, Product, ProductImage, ProductSpec, ProductVariant, Room
 from app.repositories.base import Repository
 from app.schemas.catalog import ImportResult
 from app.storage import get_storage
@@ -54,6 +54,9 @@ class ProductImportData:
     rooms: list[str] = field(default_factory=list)
     specs: list[tuple[str, str]] = field(default_factory=list)
     images: list[str] = field(default_factory=list)
+    dimension_images: list[str] = field(default_factory=list)
+    # (color name or None, size or None, price delta)
+    variants: list[tuple[str | None, str | None, Decimal]] = field(default_factory=list)
     is_featured: bool | None = None
     is_best_seller: bool | None = None
     is_published: bool | None = None
@@ -78,8 +81,9 @@ class ProductImporter:
             product = Product(slug=slug, sku=data.sku, name=data.name, price=data.price)
             self.db.add(product)
         self._assign_fields(product, data)
-        if data.images and (replace_images or not product.images):
+        if (data.images or data.dimension_images) and (replace_images or not product.images):
             self._attach_images(product, data.images, replace=replace_images)
+            self._attach_images(product, data.dimension_images, replace=False, is_dimension=True)
         self.db.flush()
         return action, product
 
@@ -149,6 +153,12 @@ class ProductImporter:
         if data.specs:
             product.specs = [ProductSpec(key=k[:150], value=v[:1000], sort_order=i)
                              for i, (k, v) in enumerate(data.specs) if k and v]
+        if data.variants:
+            product.variants = [
+                ProductVariant(color_id=self._ensure(Color, color).id if color else None,
+                               size=size[:100] if size else None, price_delta=delta)
+                for color, size, delta in data.variants
+            ]
 
     def _ensure(self, model: type, name: str) -> Any:
         slug = slugify(name)
@@ -172,7 +182,7 @@ class ProductImporter:
         assert parent is not None
         return parent
 
-    def _attach_images(self, product: Product, urls: list[str], replace: bool) -> None:
+    def _attach_images(self, product: Product, urls: list[str], replace: bool, is_dimension: bool = False) -> None:
         storage = get_storage()
         if replace:
             for image in list(product.images):
@@ -180,7 +190,8 @@ class ProductImporter:
                 if image.thumb_path:
                     storage.delete(image.thumb_path)
             product.images.clear()
-        for position, url in enumerate(urls):
+        start = len(product.images)
+        for position, url in enumerate(urls, start=start):
             stored_url, thumb_url = url, None
             if self.image_fetcher and url.startswith(("http://", "https://")):
                 try:
@@ -190,7 +201,7 @@ class ProductImporter:
                     log.warning("Skipping image %s: %s", url, exc)
                     continue
             product.images.append(ProductImage(path=stored_url, thumb_path=thumb_url, alt=product.name,
-                                               sort_order=position))
+                                               sort_order=position, is_dimension=is_dimension))
 
 
 # ---------- File parsing / export ----------

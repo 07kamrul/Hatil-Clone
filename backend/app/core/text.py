@@ -6,8 +6,8 @@ import nh3
 _SLUG_STRIP = re.compile(r"[^a-z0-9]+")
 
 ALLOWED_TAGS = {
-    "a", "b", "blockquote", "br", "div", "em", "h2", "h3", "h4", "h5", "hr", "i", "img", "li",
-    "ol", "p", "span", "strong", "sub", "sup", "table", "tbody", "td", "th", "thead", "tr", "u", "ul",
+    "a", "b", "blockquote", "br", "em", "h2", "h3", "h4", "h5", "hr", "i", "img", "li",
+    "ol", "p", "strong", "sub", "sup", "table", "tbody", "td", "th", "thead", "tr", "u", "ul",
     "figure", "figcaption",
 }
 ALLOWED_ATTRIBUTES = {

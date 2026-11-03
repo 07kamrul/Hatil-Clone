@@ -19,3 +19,6 @@ ignore = ["S101", "B008", "UP046"]
 [tool.coverage.run]
 source = ["app", "scripts/scraper"]
 omit = ["app/storage/s3.py"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "scraper", "scripts"]
