@@ -15,3 +15,6 @@ uploads_import/
 backend/uploads_import/
 backend/import.db
 *.db-journal
+
+# Dokploy real env files (commit only *.env.example)
+deploy/dokploy/*.env
