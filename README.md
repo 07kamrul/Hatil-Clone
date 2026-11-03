@@ -15,10 +15,26 @@ orders. Only `/admin` requires a login.
 
 ```bash
 cp .env.example .env          # then edit secrets (see "Deploy")
-docker compose up --build -d
-docker compose exec backend alembic upgrade head
-docker compose exec backend python -m scripts.seed --demo   # optional demo catalog
+docker compose up --build -d                  # add SEED_DEMO=true in front for the demo catalog
 ```
+
+Nothing has to be run by hand after a deploy. The backend container's
+[`docker-entrypoint.sh`](backend/docker-entrypoint.sh) runs on every start: it waits for PostgreSQL, runs
+`alembic upgrade head`, runs the seed (idempotent: it creates the super admin, settings and taxonomy only if
+missing), and then starts uvicorn. All four services have healthchecks, and each waits for the one it depends on.
+
+| Variable | Default | Effect |
+|---|---|---|
+| `SEED_DEMO` | `false` | `true` also seeds demo products (skipped if they already exist) |
+| `INSTALL_DEV` | `false` | Build arg: `true` installs pytest/ruff into the backend image |
+| `DB_WAIT_SECONDS` | `60` | How long the entrypoint waits for the database |
+
+Tests inside the stack: `INSTALL_DEV=true docker compose build backend && docker compose run --rm backend pytest`.
+
+**Dokploy.** Create a *Compose* application pointing at this repo and `docker-compose.yml`, set the variables
+from `.env.example` in its Environment tab, and deploy. Migrations and seeding happen automatically on each
+deploy. The nginx config is built into its image (`nginx/Dockerfile`), so it doesn't depend on files on the
+host. Put Dokploy's domain/TLS on the `nginx` service (port 80).
 
 Open http://localhost for the site, http://localhost/admin for the admin panel and
 http://localhost/api/docs for the API docs. The super admin is created from `SUPER_ADMIN_EMAIL` /
@@ -85,6 +101,9 @@ cd backend
   exponential backoff, and identifies itself with `SCRAPER_USER_AGENT`. Set a real contact address there.
 - Re-running is safe: products are upserted, and progress is kept in the `scrape_log` table. Each run writes
   a report to `SCRAPER_OUTPUT_DIR` (default `scraper_output/`).
+- A product URL that returns **404 or 410** is marked `gone` in `scrape_log` and listed under "Gone" in the
+  report. It is never retried, and an existing product imported from it stays published. Use the admin panel
+  to unpublish it. 429 and 5xx responses are still retried with backoff.
 
 **Legal note.** Product text, photos and prices belong to their owners. Get written permission from the
 source site before importing its content into a public deployment, and follow its terms of use. Use the

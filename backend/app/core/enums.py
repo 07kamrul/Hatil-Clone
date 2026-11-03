@@ -35,6 +35,7 @@ class ScrapeStatus(StrEnum):
     DONE = "done"
     FAILED = "failed"
     SKIPPED = "skipped"
+    GONE = "gone"  # source returned 404/410; never retried
 
 
 class ProductSort(StrEnum):

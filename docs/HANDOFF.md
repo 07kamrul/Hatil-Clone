@@ -10,7 +10,7 @@
 | 5 | Public APIs | ✅ committed |
 | 6 | Angular public site | ✅ committed |
 | 7 | Angular admin panel | ✅ committed (in commit `4f0ec0b` + `9923a88`) |
-| 8 | SEO/SSR, optimisation, tests, README | ✅ committed (docker e2e still unverified) |
+| 8 | SEO/SSR, optimisation, tests, README | ✅ done (docker e2e verified) |
 
 Verified so far: 66 backend pytest tests and 17 frontend vitest tests pass, and the SSR build passes.
 SSR returns correct titles, OG tags, JSON-LD and 404 statuses. In the browser, these flows were checked:
@@ -31,8 +31,15 @@ inquiry logging, admin login, product edit/save, and the banner form.
 - README.md written (run, deploy, scraper + legal note, BRAND_MODE, assumptions).
 
 ## Remaining work
-1. **`docker compose up --build`** end to end. Docker Desktop was not running on the second machine either.
-2. Open issue A below (needs `import.db` and network access to the source site).
+1. Open issue A below: re-run `python -m scripts.scraper run --resume` against the source. 404/410 URLs are
+   now recorded as `gone` (never retried), so the remaining `failed` rows will show their real causes.
+
+## Docker verified (2026-11-03, Colima)
+All 4 services are healthy, the entrypoint migrates and seeds, the API, SSR and admin login (JWT) work, each
+security header appears once on every route, `nginx -t` passes, and `docker compose run --rm backend pytest`
+gives 85 passed. Fixed along the way: a Python 3.12 import crash in `crud_service.py` (a `list` method
+shadowed `list[...]` annotations; 3.14 hid it), the nginx config is now built into its image (bind mounts from
+`/Volumes` fail under Colima and are fragile on Dokploy), and duplicate headers on `/api`, `/sitemap.xml` and `/robots.txt`.
 
 ## Open issues
 - **A. Scraper failure classification.** The full run found 821 product URLs: 548 done, 537 unique products

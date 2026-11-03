@@ -19,7 +19,7 @@ from app.repositories.category_repository import CategoryRepository
 from app.services.product_import_service import EXPORT_COLUMNS, ProductImporter, product_to_row
 from scraper.config import ScraperConfig
 from scraper.discovery import category_slug_of, classify_url, extract_product_links, next_page_url, parse_sitemap
-from scraper.http import FetchError, PoliteClient, RobotsDisallowedError, render_with_playwright
+from scraper.http import FetchError, GoneError, PoliteClient, RobotsDisallowedError, render_with_playwright
 from scraper.mapper import to_import
 from scraper.parsers import ParseError, ScrapedProduct, SkipProduct, parse_product
 
@@ -42,8 +42,10 @@ class RunReport:
     failed: int = 0
     skipped: int = 0
     requests: int = 0
+    gone: int = 0
     failures: list[dict[str, str]] = field(default_factory=list)
     skips: list[dict[str, str]] = field(default_factory=list)
+    gone_urls: list[dict[str, str]] = field(default_factory=list)
 
 
 class ScrapeRun:
@@ -138,6 +140,12 @@ class ScrapeRun:
             self.scraped.append(scraped)
             report.created += action == "created"
             report.updated += action == "updated"
+        except GoneError as exc:
+            # The existing product (if any) is left untouched: not deleted, not unpublished.
+            entry.status, entry.error = ScrapeStatus.GONE, f"HTTP {exc.status_code}"
+            report.gone += 1
+            report.gone_urls.append({"url": entry.url, "status": str(exc.status_code)})
+            log.info("Gone (HTTP %s): %s", exc.status_code, entry.url)
         except (RobotsDisallowedError, SkipProduct) as exc:
             entry.status, entry.error = ScrapeStatus.SKIPPED, str(exc)
             report.skipped += 1
@@ -198,8 +206,13 @@ def render_report(r: RunReport) -> str:
         f"- Mode: `{r.mode}`", f"- Started: {r.started_at}", f"- Finished: {r.finished_at}",
         f"- URLs discovered: {r.discovered}", f"- Attempted: {r.attempted}",
         f"- Created: {r.created}", f"- Updated: {r.updated}", f"- Failed: {r.failed}",
-        f"- Skipped (robots.txt / discontinued / no price): {r.skipped}", f"- HTTP requests: {r.requests}", "",
+        f"- Skipped (robots.txt / discontinued / no price): {r.skipped}", f"- Gone (HTTP 404/410): {r.gone}",
+        f"- HTTP requests: {r.requests}", "",
     ]
+    if r.gone_urls:
+        lines += ["## Gone (404/410)", "", "| URL | Status |", "|---|---|"]
+        lines += [f"| {g['url']} | {g['status']} |" for g in r.gone_urls]
+        lines += [""]
     if r.failures:
         lines += ["## Failures", "", "| URL | Error |", "|---|---|"]
         lines += [f"| {f['url']} | {f['error'].replace('|', '/')} |" for f in r.failures]

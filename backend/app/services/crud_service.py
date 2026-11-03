@@ -1,3 +1,7 @@
+# Deferred annotations: the `list` method below would otherwise shadow the builtin in
+# `list[...]` annotations on Python < 3.14 (TypeError at import time).
+from __future__ import annotations
+
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any, Generic, TypeVar

@@ -23,6 +23,18 @@ class FetchError(Exception):
     pass
 
 
+GONE_STATUSES = {404, 410}
+
+
+class GoneError(FetchError):
+    """The URL no longer exists at the source (HTTP 404/410). Not retried."""
+
+    def __init__(self, url: str, status_code: int) -> None:
+        super().__init__(f"HTTP {status_code} for {url}")
+        self.url = url
+        self.status_code = status_code
+
+
 class PoliteClient:
     def __init__(self, config: ScraperConfig, client: httpx.Client | None = None, sleep=time.sleep) -> None:  # noqa: ANN001
         self.config = config
@@ -90,6 +102,8 @@ class PoliteClient:
             else:
                 if res.status_code < 400:
                     return res
+                if res.status_code in GONE_STATUSES:
+                    raise GoneError(url, res.status_code)
                 if res.status_code not in RETRY_STATUSES:
                     raise FetchError(f"HTTP {res.status_code} for {url}")
                 last_error = f"HTTP {res.status_code}"
