@@ -66,16 +66,19 @@ fi
 DB_URL_PLAIN="${DATABASE_URL/+asyncpg/}"
 DB_URL_PLAIN="${DB_URL_PLAIN/+psycopg/}"   # pg_dump wants plain postgresql:// (no SQLAlchemy driver suffix)
 BACKUP_FILE="$BACKUP_DIR/hatil-$RUN_TS.sql.gz"
+RAW_DUMP="$BACKUP_DIR/.hatil-$RUN_TS.sql"
 log "backing up database to $BACKUP_FILE"
-if ! pg_dump --clean --if-exists --no-owner --no-privileges "$DB_URL_PLAIN" | gzip > "$BACKUP_FILE"; then
+if ! pg_dump --clean --if-exists --no-owner --no-privileges "$DB_URL_PLAIN" > "$RAW_DUMP"; then
   log "FATAL: pg_dump failed; not scraping"
+  rm -f "$RAW_DUMP"
   exit 1
 fi
-if [ ! -s "$BACKUP_FILE" ]; then
-  log "FATAL: backup file is empty; not scraping"
-  rm -f "$BACKUP_FILE"
+if [ ! -s "$RAW_DUMP" ]; then
+  log "FATAL: backup dump is empty; not scraping"
+  rm -f "$RAW_DUMP"
   exit 1
 fi
+gzip -c "$RAW_DUMP" > "$BACKUP_FILE" && rm -f "$RAW_DUMP"
 log "backup OK ($(wc -c < "$BACKUP_FILE" | tr -d ' ') bytes)"
 ls -1t "$BACKUP_DIR"/hatil-*.sql.gz 2>/dev/null | tail -n +$((KEEP_BACKUPS + 1)) | while IFS= read -r old; do
   log "pruning old backup $old"
@@ -124,8 +127,14 @@ fi
 
 log "scraper finished; verifying against $API_BASE"
 VERIFY_RC=0
-PYTHON="$(command -v python)" API="$API_BASE" OUTPUT_DIR="$SCRAPER_OUTPUT_DIR" \
-  bash "$APP_DIR/scripts/verify_import.sh" --api "$API_BASE" || VERIFY_RC=$?
+PYTHON_BIN="$(command -v python)"
+VERIFY_ARGS=(--api "$API_BASE")
+newest_in() { ls -1t "$1"/$2 2>/dev/null | head -1; }
+REPORT_JSON="$(newest_in "$SCRAPER_OUTPUT_DIR" 'products-*.json')"
+[ -n "$REPORT_JSON" ] && VERIFY_ARGS+=(--products-json "$REPORT_JSON")
+[ -n "$REPORT_SRC" ] && VERIFY_ARGS+=(--report "$REPORT_SRC")
+PYTHON="$PYTHON_BIN" OUTPUT_DIR="$SCRAPER_OUTPUT_DIR" \
+  "$PYTHON_BIN" -m scripts.verify_import "${VERIFY_ARGS[@]}" || VERIFY_RC=$?
 
 if [ "$VERIFY_RC" -ne 0 ]; then
   log "FAILED: verification exited $VERIFY_RC; no done marker (next redeploy/restart resumes automatically)"
@@ -144,4 +153,5 @@ FAILED_COUNT="$(sed -n 's/^Failed: \([0-9]*\).*/\1/p' "$REPORT_FILE" | tail -1)"
   echo "report: $REPORT_FILE"
 } > "$DONE_FILE"
 log "done: created=${CREATED:-?} updated=${UPDATED:-?} failed=${FAILED_COUNT:-?}; marker written to $DONE_FILE"
+rm -f "$FAILED_FILE"
 log "verify the site, then set CATALOG_IMPORT=off in the deploy environment"

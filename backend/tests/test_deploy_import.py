@@ -29,7 +29,7 @@ case " $* " in
     printf 'Attempted: 12\nCreated: 10\nUpdated: 1\nFailed: 1\n' > "$SCRAPER_OUTPUT_DIR/report-001.md"
     exit "${SCRAPER_EXIT:-0}" ;;
   *" -m scripts.verify_import "*) exit "${VERIFY_EXIT:-0}" ;;
-  *"SHOW\ server_version"*|*SHOW*server_version*) echo "15.6"; exit 0 ;;
+  *"SHOW\ server_version"*|*SHOW*server_version*) echo "15"; exit 0 ;;
   *) exit 0 ;;
 esac
 """
@@ -152,7 +152,7 @@ def test_pg_dump_failure_aborts_before_scraping(paths: dict[str, Path]) -> None:
 def test_empty_backup_aborts_before_scraping(paths: dict[str, Path]) -> None:
     res = run_import(paths, CATALOG_IMPORT="auto", PGDUMP_EMPTY=1)
     assert res.returncode == 1
-    assert "backup file is empty" in res.stdout
+    assert "backup dump is empty" in res.stdout
     assert scraper_modes(paths) == []
     assert not (paths["data"] / "import.done").exists()
 
@@ -177,7 +177,7 @@ def test_database_url_converted_for_pg_dump(paths: dict[str, Path], url: str, ex
 def test_successful_run_writes_markers_report_and_prunes_backups(paths: dict[str, Path]) -> None:
     backups = paths["data"] / "backups"
     backups.mkdir(parents=True)
-    for i in range(3):  # old dumps -> all kept (only the 4th-oldest onward gets pruned)
+    for i in range(3):  # old dumps; the prune keeps the 3 newest overall (2 of these + the new one)
         (backups / f"hatil-2026010{i}-000000.sql.gz").write_text("old")
     res = run_import(paths, CATALOG_IMPORT="auto")
     assert res.returncode == 0, res.stdout + res.stderr
@@ -185,7 +185,7 @@ def test_successful_run_writes_markers_report_and_prunes_backups(paths: dict[str
     assert "created: 10" in done and "failed: 1" in done and "completed:" in done
     assert scraper_modes(paths) == ["--all"]
     assert "Created: 10" in (paths["data"] / "import-report.md").read_text()
-    assert len(list(backups.glob("hatil-*.sql.gz"))) == 4  # 3 kept from before + the new one
+    assert len(list(backups.glob("hatil-*.sql.gz"))) == 3
     assert not (paths["data"] / "import.failed").exists()
     assert any("run --all" in line for line in calls(paths))
 
@@ -198,8 +198,9 @@ def test_backup_pruning_keeps_only_three_newest(paths: dict[str, Path]) -> None:
     res = run_import(paths, CATALOG_IMPORT="auto")
     assert res.returncode == 0, res.stdout + res.stderr
     remaining = sorted(backups.glob("hatil-*.sql.gz"))
-    assert len(remaining) == 4  # 3 newest of the old + the new dump
+    assert len(remaining) == 3  # the new dump + the 2 newest old ones
     assert "hatil-20260100-000000.sql.gz" not in [p.name for p in remaining]
+    assert "hatil-20260101-000000.sql.gz" not in [p.name for p in remaining]
 
 
 def test_scraper_failure_leaves_no_done_marker(paths: dict[str, Path]) -> None:
@@ -239,17 +240,17 @@ def test_status_requires_admin(client: TestClient) -> None:
     assert client.get("/api/v1/admin/import/status").status_code == 401
 
 
-def test_status_reports_states(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_status_reports_states(client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     from app.api.v1.admin import imports as imports_module
 
-    data_dir = imports_module._data_dir()
+    monkeypatch.setenv("DATA_DIR", str(tmp_path / "data"))
+    data_dir = Path(os.environ["DATA_DIR"])
     headers = _login(client)
 
     monkeypatch.setenv("CATALOG_IMPORT", "off")
     assert client.get("/api/v1/admin/import/status", headers=headers).json()["status"] == "off"
     monkeypatch.setenv("CATALOG_IMPORT", "auto")
 
-    monkeypatch.setattr(imports_module, "_data_dir", lambda: data_dir)
     logs = data_dir / "logs"
     logs.mkdir(parents=True, exist_ok=True)
     (logs / "import-20260101-000000.log").write_text("line1\nline2\n")
