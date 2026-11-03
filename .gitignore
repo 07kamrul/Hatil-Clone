@@ -7,6 +7,7 @@ __pycache__/
 htmlcov/
 backend/uploads/
 backend/scraper_output/
+backups/
 node_modules/
 frontend/dist/
 frontend/.angular/

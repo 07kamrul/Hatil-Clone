@@ -63,6 +63,15 @@ seed() {
   fi
 }
 
+start_catalog_import() {
+  # Opt-in (CATALOG_IMPORT=auto|full + CATALOG_IMPORT_BACKUP_CONFIRMED=yes). Runs in the background so the API
+  # starts immediately; see scripts/deploy_import.sh. With CATALOG_IMPORT unset this does nothing.
+  if [ "${CATALOG_IMPORT:-off}" != "off" ]; then
+    log "catalog import requested (CATALOG_IMPORT=${CATALOG_IMPORT}); running in the background"
+    sh scripts/deploy_import.sh &
+  fi
+}
+
 serve() {
   log "starting API on port ${PORT:-8000}"
   exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}" --proxy-headers --forwarded-allow-ips='*'
@@ -74,6 +83,7 @@ ensure_secrets
 if [ "$#" -eq 0 ] || [ "$1" = "serve" ]; then
   migrate
   seed
+  start_catalog_import
   serve
 fi
 

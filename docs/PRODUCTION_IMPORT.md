@@ -30,20 +30,36 @@ curl -s https://hatilapi.anshintech.dpdns.org/api/v1/health   # {"status":"ok"}
 Run the DB dump from a machine with `postgresql-client` of the **same major version as the server** and network
 access to it. `DATABASE_URL` in `backend.env` uses the SQLAlchemy prefix; strip `+psycopg` for the CLI tools.
 ```bash
-STAMP=$(date +%Y%m%d-%H%M)
-pg_dump -Fc "${DATABASE_URL/+psycopg/}" -f "hatil-pre-import-$STAMP.dump"
+./scripts/backup_db.sh     # -> backups/hatil-YYYY-MM-DD.sql; fails if empty; prints the restore command
 # on the Dokploy server: snapshot the uploads volume
+STAMP=$(date +%Y%m%d-%H%M)
 docker run --rm -v hatil-uploads:/data -v "$PWD":/backup alpine \
   tar czf "/backup/uploads-pre-import-$STAMP.tgz" -C /data .
 ```
+`backup_db.sh` uses `pg_dump` if installed, else Docker (`postgres:16-alpine`, override with `PG_MAJOR`), reads
+`DATABASE_URL` from the environment or `deploy/dokploy/backend.env`, and refuses to run unless `backups/` is gitignored.
 **Restore** (also reverts anything admins changed since the dump, so use only to undo a bad import):
 ```bash
-pg_restore --clean --if-exists --no-owner -d "${DATABASE_URL/+psycopg/}" "hatil-pre-import-$STAMP.dump"
+psql "${DATABASE_URL/+psycopg/}" -f backups/hatil-YYYY-MM-DD.sql      # plain SQL written with --clean
 docker run --rm -v hatil-uploads:/data -v "$PWD":/backup alpine \
   sh -c "rm -rf /data/* && tar xzf /backup/uploads-pre-import-$STAMP.tgz -C /data"
 ```
 
 ## 4. Run inside the backend container (preferred)
+### Automatic, on deploy
+`backend/scripts/deploy_import.sh` is started in the background by the container entrypoint (the API starts
+immediately). In Dokploy → `hatil-backend` → Environment set, after the backup in section 3:
+```
+CATALOG_IMPORT=auto
+CATALOG_IMPORT_BACKUP_CONFIRMED=yes
+```
+and redeploy. `auto` imports everything on the first deploy and only resumes pending/failed URLs afterwards (no
+requests when nothing is pending); `full` forces a complete re-import. Without the confirmation it logs a refusal and
+imports nothing. A Postgres advisory lock stops two containers importing at once during a rolling deploy. Progress
+and the final report appear in the container log (`[catalog-import]` lines). Set `CATALOG_IMPORT=off` afterwards.
+Rate stays at 1 req/s per host whatever `SCRAPER_RPS` is.
+
+### Manual (the same thing by hand)
 Dokploy → `hatil-backend` → Terminal (workdir `/app`; `DATABASE_URL` and `UPLOAD_DIR=/app/uploads` are the real ones).
 Output goes to `/tmp` because the container user is not root.
 ```bash
@@ -76,6 +92,15 @@ REMOTE=user@server ../scripts/sync_uploads.sh --apply    # copy
 Product rows point at `/uploads/...` paths, so images 404 until the sync finishes.
 
 ## 5. Verify
+```bash
+./scripts/verify_import.sh      # uses the newest report-*.md / products-*.json it finds; exit code 1 on any failure
+OUTPUT_DIR=./scraper_output ./scripts/verify_import.sh --samples 10 --spot 5
+```
+It checks: product count vs the report, `/categories/tree`, 10 random products (full description, every image URL
+returns HTTP 200), the sitemap lists the sampled products (it is built from the DB per request, so there is nothing to
+regenerate), a live spot-check of 5 products against hatil.com (price, description size, image count, at 1 req/s), and
+prints the final report: scraped vs inserted, images downloaded vs stored, failures, products missing
+price/image/description. By hand:
 ```bash
 API=https://hatilapi.anshintech.dpdns.org/api/v1
 curl -s "$API/products?page=1" | head -c 600
