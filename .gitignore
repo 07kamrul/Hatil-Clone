@@ -14,3 +14,4 @@ frontend/.angular/
 uploads_import/
 backend/uploads_import/
 backend/import.db
+*.db-journal
