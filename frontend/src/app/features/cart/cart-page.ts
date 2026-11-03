@@ -104,7 +104,7 @@ export class CartPage {
     const s = this.settings.settings();
     return buildOrderMessage({
       template: s.message_template, siteName: s.site_name, currencySymbol: s.currency_symbol,
-      origin: this.seo.origin(), lines: this.cart.lines(), customer: this.customer,
+      origin: this.seo.siteOrigin(), lines: this.cart.lines(), customer: this.customer,
     });
   };
 

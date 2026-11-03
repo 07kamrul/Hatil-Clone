@@ -253,7 +253,7 @@ export class ProductPage {
     const line = this.lineFor(p);
     const message = buildOrderMessage({
       template: s.message_template, siteName: s.site_name, currencySymbol: s.currency_symbol,
-      origin: this.seo.origin(), lines: [line],
+      origin: this.seo.siteOrigin(), lines: [line],
     });
     if (s.log_inquiries) {
       this.api.logInquiry([{ product_id: p.id, slug: p.slug, sku: line.sku, name: p.name, variant: line.variant, quantity: line.quantity, unit_price: line.unitPrice }], {}, 'product')

@@ -57,8 +57,10 @@ const safe = <T>(fallback: T): OperatorFunction<T, T> => catchError(() => of(fal
           @if (d.hero.length > 1) {
             <div class="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2">
               @for (b of d.hero; track b.id; let i = $index) {
-                <button type="button" (click)="goTo(i)" [attr.aria-label]="'Show slide ' + (i + 1)"
-                        class="h-2.5 w-2.5 rounded-full" [class]="i === slide() ? 'bg-white' : 'bg-white/50'"></button>
+                <button type="button" (click)="goTo(i)" [attr.aria-label]="'Show slide ' + (i + 1)" [attr.aria-current]="i === slide()"
+                        class="flex h-6 w-6 items-center justify-center">
+                  <span class="h-2.5 w-2.5 rounded-full" [class]="i === slide() ? 'bg-white' : 'bg-white/50'"></span>
+                </button>
               }
             </div>
             <button type="button" (click)="step(d.hero.length, -1)" aria-label="Previous slide"

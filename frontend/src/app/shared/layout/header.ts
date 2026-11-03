@@ -37,11 +37,11 @@ import { SearchBox } from './search-box';
         </a>
         <div class="mx-2 hidden flex-1 md:block"><app-search-box /></div>
         <nav class="ml-auto flex items-center gap-1 sm:gap-3" aria-label="Quick links">
-          <a routerLink="/compare" class="relative p-2 hover:text-brand" aria-label="Compare"><app-icon name="compare" [size]="22" />
+          <a routerLink="/compare" class="relative p-2 hover:text-brand" [attr.aria-label]="'Compare ' + compare.count()"><app-icon name="compare" [size]="22" />
             @if (compare.count()) { <span class="badge">{{ compare.count() }}</span> }</a>
-          <a routerLink="/wishlist" class="relative p-2 hover:text-brand" aria-label="Wishlist"><app-icon name="heart" [size]="22" />
+          <a routerLink="/wishlist" class="relative p-2 hover:text-brand" [attr.aria-label]="'Wishlist ' + wishlist.count()"><app-icon name="heart" [size]="22" />
             @if (wishlist.count()) { <span class="badge">{{ wishlist.count() }}</span> }</a>
-          <a routerLink="/cart" class="relative p-2 hover:text-brand" aria-label="Cart"><app-icon name="cart" [size]="22" />
+          <a routerLink="/cart" class="relative p-2 hover:text-brand" [attr.aria-label]="'Cart ' + cart.count()"><app-icon name="cart" [size]="22" />
             @if (cart.count()) { <span class="badge">{{ cart.count() }}</span> }</a>
         </nav>
       </div>

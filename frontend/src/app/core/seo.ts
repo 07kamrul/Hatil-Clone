@@ -53,7 +53,7 @@ export class Seo {
   }
 
   /** Public origin without a trailing slash, e.g. "https://shop.example". */
-  origin(): string {
+  siteOrigin(): string {
     return this.absolute('/').replace(/\/$/, '');
   }
 
