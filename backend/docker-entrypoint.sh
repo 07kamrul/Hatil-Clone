@@ -64,8 +64,8 @@ seed() {
 }
 
 serve() {
-  log "starting API"
-  exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'
+  log "starting API on port ${PORT:-8000}"
+  exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}" --proxy-headers --forwarded-allow-ips='*'
 }
 
 wait_for_db
