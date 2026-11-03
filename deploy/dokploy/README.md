@@ -8,8 +8,14 @@ Two Dokploy **Applications** (no compose, no nginx; Traefik routes). Postgres is
    (Context Path is relative to the repo root, not to Build Path; leaving it `.` fails with
    `"/requirements.txt": not found`.)
 2. Environment: paste `backend.env` (copy `backend.env.example`, fill `__placeholders__`;
-   JWT: `openssl rand -hex 64`).
-3. Advanced -> Volumes: Volume mount, name `hatil-uploads`, mount path `/app/uploads`.
+   JWT: `openssl rand -hex 64`). `CATALOG_IMPORT=auto` makes the first deploy back the DB up, import the
+   catalogue, verify and write `/app/data/import.done`; once `/api/v1/admin/import/status` reports `done`,
+   set `CATALOG_IMPORT=off` (later deploys skip anyway via the done marker, but off is explicit).
+3. Advanced -> Volumes (two mounts, both required for the automatic import):
+   - Volume mount, name `hatil-uploads`, mount path `/app/uploads` (product images, survives redeploys).
+   - Volume mount, name `hatil-data`, mount path `/app/data` (import state: `import.done`, `import.lock`,
+     `import.failed`, `import-report.md`, `backups/` — the 3 newest pg_dump gzip dumps, `logs/`,
+     `scraper_output/`).
 4. Domains: `hatilapi.anshintech.dpdns.org`, container port **4000** (= `PORT` in backend.env; defaults to 8000 if unset), HTTPS on, cert **Let's Encrypt**.
 5. Health check (Advanced -> Swarm settings): test
    `["CMD","python","-c","import os,urllib.request;urllib.request.urlopen('http://127.0.0.1:'+os.environ.get('PORT','8000')+'/api/v1/health',timeout=3)"]`.

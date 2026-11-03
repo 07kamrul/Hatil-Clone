@@ -4,7 +4,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 \
     PIP_ROOT_USER_ACTION=ignore PIP_DISABLE_PIP_VERSION_CHECK=1
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends libjpeg62-turbo libwebp7 \
+# postgresql-client: pg_dump for the automatic pre-import DB backup (scripts/deploy_import.sh).
+# Pinned to the server's major version -- currently 15 (Debian bookworm default). The script re-checks
+# `SHOW server_version` at runtime and warns on a mismatch; if the server is another major (e.g. 16),
+# change both lines to postgresql-client-<major> and confirm a dump before relying on it.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      libjpeg62-turbo libwebp7 postgresql-client util-linux \
     && rm -rf /var/lib/apt/lists/*
 
 # INSTALL_DEV=true adds pytest/ruff so `docker compose run --rm backend pytest` works.
@@ -15,7 +20,9 @@ RUN pip install -r requirements.txt \
 
 COPY . .
 RUN chmod +x docker-entrypoint.sh \
-    && useradd --create-home appuser && mkdir -p /app/uploads && chown -R appuser /app
+    && useradd --create-home appuser \
+    && mkdir -p /app/uploads /app/data \
+    && chown -R appuser /app
 USER appuser
 
 EXPOSE 8000

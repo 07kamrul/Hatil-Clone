@@ -3,7 +3,7 @@
 #   1. wait for the database to accept connections
 #   2. apply migrations (alembic upgrade head)
 #   3. seed idempotently (super admin, settings, taxonomy; demo products when SEED_DEMO=true)
-#   4. start the API
+#   4. start the API (any catalogue import runs in the background, never blocking the healthcheck)
 # Any other command (e.g. `docker compose run --rm backend pytest`) runs after step 1 only.
 set -eu
 
@@ -64,11 +64,12 @@ seed() {
 }
 
 start_catalog_import() {
-  # Opt-in (CATALOG_IMPORT=auto|full + CATALOG_IMPORT_BACKUP_CONFIRMED=yes). Runs in the background so the API
-  # starts immediately; see scripts/deploy_import.sh. With CATALOG_IMPORT unset this does nothing.
-  if [ "${CATALOG_IMPORT:-off}" != "off" ]; then
-    log "catalog import requested (CATALOG_IMPORT=${CATALOG_IMPORT}); running in the background"
-    sh scripts/deploy_import.sh &
+  # CATALOG_IMPORT=auto (default in deploy_import.sh) or full: runs in the background so the API starts and
+  # passes the Dokploy healthcheck immediately; see scripts/deploy_import.sh. The script takes its own
+  # flock, backs the DB up, resumes or starts the scrape, verifies, and writes /app/data/import.done.
+  if [ "${CATALOG_IMPORT:-auto}" != "off" ]; then
+    log "catalog import requested (CATALOG_IMPORT=${CATALOG_IMPORT:-auto}); running in the background"
+    nohup bash scripts/deploy_import.sh &
   fi
 }
 
