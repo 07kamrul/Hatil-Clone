@@ -19,3 +19,32 @@ def test_postgres_urls_are_mapped_to_psycopg3(url):
 
 def test_sqlite_url_is_left_unchanged():
     assert normalize_database_url("sqlite:///dev.db") == "sqlite:///dev.db"
+
+
+from pydantic import ValidationError  # noqa: E402
+
+from app.core.config import Settings  # noqa: E402
+
+_REAL_SECRET = "a" * 64
+_REAL_PASSWORD = "S0me-Real-Admin-Pass!"
+
+
+@pytest.mark.parametrize("secret", ["__openssl_rand_hex_64__", "replace-with-a-long-random-secret-at-least-32-chars"])
+def test_production_rejects_placeholder_jwt_secret_with_clear_message(secret):
+    with pytest.raises(ValidationError, match="JWT_SECRET is still a template placeholder"):
+        Settings(environment="production", jwt_secret=secret, super_admin_password=_REAL_PASSWORD)
+
+
+def test_production_rejects_placeholder_admin_password():
+    with pytest.raises(ValidationError, match="SUPER_ADMIN_PASSWORD is still a template placeholder"):
+        Settings(environment="production", jwt_secret=_REAL_SECRET, super_admin_password="__strong_password__")
+
+
+def test_production_accepts_real_secrets():
+    settings = Settings(environment="production", jwt_secret=_REAL_SECRET, super_admin_password=_REAL_PASSWORD)
+    assert settings.jwt_secret == _REAL_SECRET
+
+
+def test_development_ignores_placeholder_password():
+    settings = Settings(environment="development", jwt_secret=_REAL_SECRET, super_admin_password="__strong_password__")
+    assert settings.super_admin_password == "__strong_password__"

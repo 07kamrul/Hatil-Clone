@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, ValidationInfo, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 # Development-only placeholders; production startup refuses to run with them.
@@ -20,6 +20,24 @@ def normalize_database_url(url: str) -> str:
         if url.startswith(alias):
             return _PG_SCHEME + url[len(alias):]
     return url
+
+
+# Values copied unedited from .env.example / deploy/dokploy/backend.env.example.
+_PLACEHOLDER_PREFIXES = ("replace-with", "changeme", "change-me")
+
+
+def is_placeholder(value: str) -> bool:
+    lowered = value.strip().lower()
+    is_dunder_template = len(lowered) > 4 and lowered.startswith("__") and lowered.endswith("__")
+    return is_dunder_template or lowered.startswith(_PLACEHOLDER_PREFIXES)
+
+
+def _reject_placeholder_in_production(value: object, info: ValidationInfo) -> object:
+    if info.data.get("environment") == "production" and isinstance(value, str) and is_placeholder(value):
+        env_name = (info.field_name or "").upper()
+        hint = " (generate one with `openssl rand -hex 64`)" if env_name == "JWT_SECRET" else ""
+        raise ValueError(f"{env_name} is still a template placeholder; set a real value{hint}")
+    return value
 
 
 def _split_csv(value: object) -> object:
@@ -72,6 +90,9 @@ class Settings(BaseSettings):
 
     _normalize_db_url = field_validator("database_url", mode="before")(
         lambda v: normalize_database_url(v) if isinstance(v, str) else v
+    )
+    _no_placeholders = field_validator("jwt_secret", "super_admin_password", mode="before")(
+        _reject_placeholder_in_production
     )
     _split_lists = field_validator("cors_origins", "brand_source_terms", mode="before")(_split_csv)
 
