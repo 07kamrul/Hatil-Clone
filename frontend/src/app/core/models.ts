@@ -16,10 +16,29 @@ export interface Page<T> {
   pages: number;
 }
 
-export interface CategoryRef { id: number; name: string; slug: string }
-export interface Color { id: number; name: string; slug: string; hex_code: string | null }
-export interface Material { id: number; name: string; slug: string }
-export interface Room { id: number; name: string; slug: string; image: string | null; sort_order: number }
+export interface CategoryRef {
+  id: number;
+  name: string;
+  slug: string;
+}
+export interface Color {
+  id: number;
+  name: string;
+  slug: string;
+  hex_code: string | null;
+}
+export interface Material {
+  id: number;
+  name: string;
+  slug: string;
+}
+export interface Room {
+  id: number;
+  name: string;
+  slug: string;
+  image: string | null;
+  sort_order: number;
+}
 
 export interface ProductCard {
   id: number;
@@ -42,9 +61,26 @@ export interface ProductCard {
   created_at: string;
 }
 
-export interface ProductImage { id: number; url: string; thumb_url: string | null; alt: string | null; sort_order: number; is_dimension: boolean }
-export interface ProductVariant { id: number; color: Color | null; size: string | null; sku: string | null; price_delta: number; stock_status: StockStatus }
-export interface ProductSpec { key: string; value: string }
+export interface ProductImage {
+  id: number;
+  url: string;
+  thumb_url: string | null;
+  alt: string | null;
+  sort_order: number;
+  is_dimension: boolean;
+}
+export interface ProductVariant {
+  id: number;
+  color: Color | null;
+  size: string | null;
+  sku: string | null;
+  price_delta: number;
+  stock_status: StockStatus;
+}
+export interface ProductSpec {
+  key: string;
+  value: string;
+}
 
 export interface ProductDetail extends ProductCard {
   short_desc: string | null;
@@ -63,7 +99,12 @@ export interface ProductDetail extends ProductCard {
   updated_at: string;
 }
 
-export interface FacetOption { slug: string; name: string; count: number; hex_code: string | null }
+export interface FacetOption {
+  slug: string;
+  name: string;
+  count: number;
+  hex_code: string | null;
+}
 export interface ProductFacets {
   colors: FacetOption[];
   materials: FacetOption[];
@@ -151,11 +192,35 @@ export interface BlogSummary {
   tags: string | null;
   published_at: string | null;
 }
-export interface BlogPost extends BlogSummary { body_html: string; gallery: string[]; seo_title: string | null; seo_description: string | null }
+export interface BlogPost extends BlogSummary {
+  body_html: string;
+  gallery: string[];
+  seo_title: string | null;
+  seo_description: string | null;
+}
 
-export interface CmsPage { id: number; title: string; slug: string; body_html: string; seo_title: string | null; seo_description: string | null }
-export interface Faq { id: number; question: string; answer_html: string; group: string; show_on_home: boolean }
-export interface Suggestion { type: 'product' | 'category'; name: string; slug: string; image: string | null; price: number | null }
+export interface CmsPage {
+  id: number;
+  title: string;
+  slug: string;
+  body_html: string;
+  seo_title: string | null;
+  seo_description: string | null;
+}
+export interface Faq {
+  id: number;
+  question: string;
+  answer_html: string;
+  group: string;
+  show_on_home: boolean;
+}
+export interface Suggestion {
+  type: 'product' | 'category';
+  name: string;
+  slug: string;
+  image: string | null;
+  price: number | null;
+}
 
 export interface SiteSettings {
   site_name: string;
@@ -183,4 +248,11 @@ export interface SiteSettings {
   log_inquiries: boolean;
 }
 
-export interface ContactPayload { name: string; email?: string; phone?: string; subject?: string; message: string; website?: string }
+export interface ContactPayload {
+  name: string;
+  email?: string;
+  phone?: string;
+  subject?: string;
+  message: string;
+  website?: string;
+}

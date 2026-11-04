@@ -86,6 +86,10 @@ class Settings(BaseSettings):
     rate_limit_login: str = "10/minute"
     rate_limit_enabled: bool = True
 
+    cache_enabled: bool = True
+    cache_ttl_seconds: int = 300
+    cache_max_entries: int = 1000
+
     # Rebranding: when "neutral", imported text has source brand terms replaced by the site name.
     brand_mode: str = "neutral"
     brand_source_terms: Annotated[list[str], NoDecode] = ["HATIL", "Hatil", "hatil"]

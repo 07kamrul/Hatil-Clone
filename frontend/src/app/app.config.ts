@@ -1,11 +1,17 @@
 import { DOCUMENT } from '@angular/common';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import {
-  ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners,
+  ApplicationConfig,
+  inject,
+  provideAppInitializer,
+  provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import {
-  provideRouter, withComponentInputBinding, withInMemoryScrolling, withViewTransitions,
+  provideRouter,
+  withComponentInputBinding,
+  withInMemoryScrolling,
+  withViewTransitions,
 } from '@angular/router';
 
 import { routes } from './app.routes';

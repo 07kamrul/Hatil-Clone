@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 
 from fastapi import FastAPI, Request, Response
@@ -9,12 +10,19 @@ from slowapi.errors import RateLimitExceeded
 
 from app.api.v1 import auth, public
 from app.api.v1.admin import router as admin_router
+from app.core.cache import cache_key, response_cache
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
 from app.core.rate_limit import limiter
 from app.storage.base import InvalidImageError
 
 API_PREFIX = "/api/v1"
+
+# High-cardinality or per-cart endpoints: no reuse, never cached.
+CACHE_EXCLUDED_SUFFIXES = ("/search", "/products/by-ids", "/products/compare")
+# Product detail counts views in the DB on each hit; caching it would break that count.
+CACHE_EXCLUDED_VIEW_COUNTED = re.compile(r"^/api/v1/products/[^/]+$")
+CACHEABLE_BROADCAST_HEADER = "public, max-age=60"
 
 SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",
@@ -55,6 +63,51 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type"],
     )
+
+    def _is_cache_scope(path: str) -> tuple[bool, bool, bool]:
+        """(in_api, cacheable, public_but_excluded): cacheable = public GET not excluded."""
+        in_api = path.startswith(API_PREFIX)
+        is_private = path.startswith(f"{API_PREFIX}/admin") or path.startswith(f"{API_PREFIX}/auth")
+        excluded = (any(path.endswith(suffix) for suffix in CACHE_EXCLUDED_SUFFIXES)
+                    or CACHE_EXCLUDED_VIEW_COUNTED.fullmatch(path) is not None)
+        return in_api, in_api and not is_private and not excluded, in_api and not is_private and excluded
+
+    @app.middleware("http")
+    async def _response_cache(request: Request, call_next) -> Response:  # noqa: ANN001
+        method = request.method
+        path = request.url.path
+        in_api, cacheable, excluded_public = _is_cache_scope(path)
+
+        if settings.cache_enabled and cacheable and method == "GET":
+            key = cache_key(path, request.scope.get("query_string", b""))
+            cached = response_cache.get(key)
+            if cached is not None:
+                status_code, headers, body = cached
+                response = Response(content=body, status_code=status_code, headers=headers)
+                response.headers["X-Cache"] = "HIT"
+                return response
+
+        response: Response = await call_next(request)
+
+        if settings.cache_enabled:
+            if cacheable and method == "GET":
+                response.headers.setdefault("Cache-Control", CACHEABLE_BROADCAST_HEADER)
+                if response.status_code == 200:
+                    body = b""
+                    async for chunk in response.body_iterator:  # type: ignore[attr-defined]
+                        body += chunk
+                    headers = {k: v for k, v in response.headers.items() if k.lower() != "content-length"}
+                    response_cache.set(key, (response.status_code, headers, body))
+                    response = Response(content=body, status_code=response.status_code, headers=headers)
+                    response.headers["X-Cache"] = "MISS"
+                else:
+                    response.headers["X-Cache"] = "BYPASS"
+            elif settings.cache_enabled and in_api and excluded_public and method == "GET":
+                response.headers["X-Cache"] = "BYPASS"
+            elif in_api and method != "GET" and response.status_code < 300:
+                # Any successful admin/auth write drops the whole cache (single-process app).
+                response_cache.clear()
+        return response
 
     @app.middleware("http")
     async def _security_headers(request: Request, call_next) -> Response:  # noqa: ANN001
