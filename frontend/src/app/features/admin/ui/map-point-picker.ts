@@ -16,6 +16,13 @@ export interface MapPointValue {
 const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const ATTRIBUTION = '&copy; OpenStreetMap contributors';
 
+/** Fallback view (Sharjah) used until valid coordinates are saved. */
+const DEFAULT_CENTER: [number, number] = [25.3216, 55.4018];
+const DEFAULT_ZOOM = 15;
+
+/** Empty or non-finite inputs (unsaved fields) must not crash the map. */
+const isFiniteNumber = (v: number | null | undefined): v is number => typeof v === 'number' && Number.isFinite(v);
+
 /**
  * Settings editor for the shop's map location: click/drag the pin, or paste a
  * Google Maps link; lat/lng/zoom are written back via the ngModel group.
@@ -65,10 +72,12 @@ export class MapPointPicker {
       try {
         this.leaflet = await import('leaflet');
         const v = this.value();
-        this.map = this.leaflet.map(this.host().nativeElement, { scrollWheelZoom: false })
-          .setView([v.map_lat, v.map_lng], Math.min(20, Math.max(1, v.map_zoom)));
+        const lat = isFiniteNumber(v.map_lat) ? v.map_lat : DEFAULT_CENTER[0];
+        const lng = isFiniteNumber(v.map_lng) ? v.map_lng : DEFAULT_CENTER[1];
+        const zoom = isFiniteNumber(v.map_zoom) ? Math.min(20, Math.max(1, v.map_zoom)) : DEFAULT_ZOOM;
+        this.map = this.leaflet.map(this.host().nativeElement, { scrollWheelZoom: false }).setView([lat, lng], zoom);
         this.leaflet.tileLayer(TILE_URL, { attribution: ATTRIBUTION, maxZoom: 19 }).addTo(this.map);
-        this.marker = this.placeMarker([v.map_lat, v.map_lng]);
+        if (isFiniteNumber(v.map_lat) && isFiniteNumber(v.map_lng)) this.marker = this.placeMarker([lat, lng]);
         this.map.on('click', (e: L.LeafletMouseEvent) => this.setPoint(e.latlng.lat, e.latlng.lng));
       } catch {
         this.failed.set(true);
@@ -77,8 +86,12 @@ export class MapPointPicker {
 
     effect(() => {
       const v = this.value();
-      if (this.map) this.map.setView([v.map_lat, v.map_lng], Math.min(20, Math.max(1, v.map_zoom)), { animate: false });
-      if (this.marker) this.marker.setLatLng([v.map_lat, v.map_lng]);
+      if (this.map && isFiniteNumber(v.map_lat) && isFiniteNumber(v.map_lng)) {
+        const zoom = isFiniteNumber(v.map_zoom) ? Math.min(20, Math.max(1, v.map_zoom)) : DEFAULT_ZOOM;
+        this.map.setView([v.map_lat, v.map_lng], zoom, { animate: false });
+        if (this.marker) this.marker.setLatLng([v.map_lat, v.map_lng]);
+        else this.marker = this.placeMarker([v.map_lat, v.map_lng]);
+      }
     });
   }
 

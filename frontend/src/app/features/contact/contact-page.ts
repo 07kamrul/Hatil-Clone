@@ -20,13 +20,11 @@ const REPLY_NOTE = 'Our team typically replies within one working day.';
   template: `
     <app-breadcrumbs [crumbs]="[{ label: 'Contact' }]" />
 
-    <!-- Hero -->
-    <div class="bg-gray-900 text-white">
-      <div class="container-x py-10">
-        <h1 class="text-2xl font-bold sm:text-3xl">Contact us</h1>
-        <p class="mt-2 max-w-2xl text-gray-300">Questions about a product, delivery or an order? Reach us on the channel that suits you — or send a message below.</p>
-        <p class="mt-3 flex items-center gap-2 text-sm text-gray-300"><app-icon name="clock" [size]="16" /> {{ replyNote }}</p>
-      </div>
+    <div class="container-x pt-8">
+      <h1 class="text-2xl font-bold sm:text-3xl">Contact us</h1>
+      <p class="mt-2 max-w-2xl text-gray-600">Questions about a product, delivery or an order? Reach us on the channel that suits you — or send a message below.</p>
+      <p class="mt-2 flex items-center gap-2 text-sm text-gray-500"><app-icon name="clock" [size]="16" /> {{ replyNote }}</p>
+      <hr class="mt-6 border-gray-200" />
     </div>
 
     <div class="container-x py-10">
