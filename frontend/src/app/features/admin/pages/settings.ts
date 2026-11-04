@@ -20,7 +20,7 @@ const GROUPS: { title: string; fields: SettingField[] }[] = [
     { key: 'meta_description', label: 'Default meta description', kind: 'textarea' },
   ] },
   { title: 'WhatsApp ordering', fields: [
-    { key: 'whatsapp_number', label: 'WhatsApp number', kind: 'text', help: 'Country code + number, e.g. 8801711000000' },
+    { key: 'whatsapp_number', label: 'WhatsApp number', kind: 'text', help: 'Country code + number, e.g. 971558907793' },
     { key: 'message_template', label: 'Order message template', kind: 'textarea',
       help: 'Placeholders: {site_name} {items} {total} {name} {phone} {address} {note}' },
     { key: 'log_inquiries', label: 'Log anonymous order inquiries for analytics', kind: 'checkbox' },

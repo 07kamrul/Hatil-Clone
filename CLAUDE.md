@@ -24,6 +24,7 @@ export DATABASE_URL=sqlite:///dev.db UPLOAD_DIR=uploads                   # or a
 .venv/Scripts/ruff check app scripts tests
 .venv/Scripts/python -m scripts.scrape_all [--limit N] [--backup]        # one command: migrate + products + content + verify
 .venv/Scripts/python -m scripts.scraper run --all | --category sofa | --resume [--limit N]
+.venv/Scripts/python -m scripts.seed_company [--keep-existing]       # company info/images from fb_page/ (Sahat Al Ramlah)
 .venv/Scripts/python -m scripts.scraper content --all | --showrooms | --banners | --pages | --blog [--limit N]
 
 # frontend (from frontend/)

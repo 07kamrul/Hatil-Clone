@@ -89,7 +89,7 @@ class Settings(BaseSettings):
     # Rebranding: when "neutral", imported text has source brand terms replaced by the site name.
     brand_mode: str = "neutral"
     brand_source_terms: Annotated[list[str], NoDecode] = ["HATIL", "Hatil", "hatil"]
-    default_site_name: str = "Casa Furnish"
+    default_site_name: str = "Sahat Al Ramlah Furniture"
 
     smtp_host: str = ""
     smtp_port: int = 587
