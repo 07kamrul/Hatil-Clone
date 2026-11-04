@@ -1,5 +1,5 @@
 import { DatePipe, NgOptimizedImage, NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { OperatorFunction, catchError, forkJoin, map, of } from 'rxjs';
@@ -10,8 +10,8 @@ import { Seo } from '../../core/seo';
 import { SettingsStore } from '../../core/settings-store';
 import { Icon } from '../../shared/ui/icon';
 import { ProductCardView } from '../../shared/ui/product-card';
+import { HomeHero } from './home-hero';
 
-const SLIDE_MS = 6000;
 const PRODUCTS_PER_ROW = 8;
 
 interface HomeData {
@@ -30,56 +30,26 @@ const safe = <T>(fallback: T): OperatorFunction<T, T> => catchError(() => of(fal
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, DatePipe, NgOptimizedImage, NgTemplateOutlet, ProductCardView, Icon],
+  imports: [RouterLink, DatePipe, NgOptimizedImage, NgTemplateOutlet, ProductCardView, Icon, HomeHero],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (data.value(); as d) {
       <!-- Hero slider -->
-      @if (d.hero.length) {
-        <section class="relative overflow-hidden bg-gray-100" aria-roledescription="carousel" aria-label="Featured offers">
-          <div class="relative aspect-[16/9] max-h-[560px] w-full sm:aspect-[16/6]">
-            @for (b of d.hero; track b.id; let i = $index) {
-              <div class="absolute inset-0 transition-opacity duration-700" [class.opacity-0]="i !== slide()"
-                   [class.pointer-events-none]="i !== slide()" [attr.aria-hidden]="i !== slide()">
-                <img [ngSrc]="b.image" [alt]="b.title" fill [priority]="i === 0" sizes="100vw" class="object-cover" />
-                <div class="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent"></div>
-                <div class="container-x absolute inset-0 flex flex-col justify-center text-white">
-                  <h2 class="max-w-xl text-3xl font-bold sm:text-5xl">{{ b.title }}</h2>
-                  @if (b.subtitle) { <p class="mt-2 max-w-md text-lg">{{ b.subtitle }}</p> }
-                  @if (b.link_url) {
-                    <a [routerLink]="b.link_url" class="btn-primary mt-5 w-fit" [attr.tabindex]="i === slide() ? 0 : -1">
-                      {{ b.button_text || 'Shop now' }}</a>
-                  }
-                </div>
-              </div>
-            }
-          </div>
-          @if (d.hero.length > 1) {
-            <div class="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2">
-              @for (b of d.hero; track b.id; let i = $index) {
-                <button type="button" (click)="goTo(i)" [attr.aria-label]="'Show slide ' + (i + 1)" [attr.aria-current]="i === slide()"
-                        class="flex h-6 w-6 items-center justify-center">
-                  <span class="h-2.5 w-2.5 rounded-full" [class]="i === slide() ? 'bg-white' : 'bg-white/50'"></span>
-                </button>
-              }
-            </div>
-            <button type="button" (click)="step(d.hero.length, -1)" aria-label="Previous slide"
-                    class="absolute left-3 top-1/2 hidden -translate-y-1/2 rotate-180 rounded-full bg-white/80 p-2 sm:block"><app-icon name="chevron" /></button>
-            <button type="button" (click)="step(d.hero.length, 1)" aria-label="Next slide"
-                    class="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-full bg-white/80 p-2 sm:block"><app-icon name="chevron" /></button>
-          }
-        </section>
-      }
+      @if (heroSlides().length) { <app-home-hero [slides]="heroSlides()" /> }
 
       <!-- Featured categories -->
       @if (d.categories.length) {
-        <section class="container-x py-10">
-          <h2 class="section-title">Shop by category</h2>
-          <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <section class="py-14">
+          <h2 class="section-title">Explore our collections</h2>
+          <div class="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
             @for (c of d.categories; track c.id) {
-              <a [routerLink]="['/category', c.slug]" class="group relative block aspect-[4/3] overflow-hidden rounded-lg bg-gray-200">
+              <a [routerLink]="['/category', c.slug]" class="group relative block aspect-square overflow-hidden bg-gray-200">
                 @if (c.image) { <img [ngSrc]="c.image" [alt]="c.name" fill sizes="(min-width:1024px) 25vw, 50vw" class="object-cover transition duration-300 group-hover:scale-105" /> }
-                <span class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3 font-semibold text-white">{{ c.name }}</span>
+                <span class="absolute inset-0 bg-black/25 transition group-hover:bg-black/45"></span>
+                <span class="absolute inset-0 flex flex-col items-center justify-center text-center text-white">
+                  <span class="text-xl font-semibold tracking-wide sm:text-3xl">{{ c.name }}</span>
+                  <span class="mt-2 h-px w-10 bg-white transition-all duration-300 group-hover:w-20"></span>
+                </span>
               </a>
             }
           </div>
@@ -92,7 +62,7 @@ const safe = <T>(fallback: T): OperatorFunction<T, T> => catchError(() => of(fal
       @if (d.offers.length) {
         <section class="container-x grid gap-4 py-6 sm:grid-cols-2">
           @for (b of d.offers; track b.id) {
-            <a [routerLink]="b.link_url || '/products'" class="group relative block aspect-[2/1] overflow-hidden rounded-lg bg-gray-200">
+            <a [routerLink]="b.link_url || '/products'" class="group relative block aspect-[2/1] overflow-hidden bg-gray-200">
               <img [ngSrc]="b.image" [alt]="b.title" fill sizes="(min-width:640px) 50vw, 100vw" class="object-cover transition duration-300 group-hover:scale-105" />
               <div class="absolute inset-0 flex flex-col justify-center bg-black/35 p-6 text-white">
                 <h3 class="text-2xl font-bold">{{ b.title }}</h3>
@@ -133,7 +103,7 @@ const safe = <T>(fallback: T): OperatorFunction<T, T> => catchError(() => of(fal
           <div class="grid gap-6 md:grid-cols-3">
             @for (p of d.posts; track p.id) {
               <a [routerLink]="['/blog', p.slug]" class="group block">
-                <div class="relative aspect-[16/10] overflow-hidden rounded-lg bg-gray-200">
+                <div class="relative aspect-[16/10] overflow-hidden bg-gray-200">
                   @if (p.cover_image) { <img [ngSrc]="p.cover_image" [alt]="p.title" fill sizes="(min-width:768px) 33vw, 100vw" class="object-cover transition duration-300 group-hover:scale-105" /> }
                 </div>
                 <h3 class="mt-3 font-semibold group-hover:text-brand">{{ p.title }}</h3>
@@ -169,25 +139,24 @@ const safe = <T>(fallback: T): OperatorFunction<T, T> => catchError(() => of(fal
     }
 
     <ng-template #row let-title="title" let-items="items" let-link="link" let-query="query">
-      <section class="container-x py-8">
-        <div class="mb-4 flex items-end justify-between">
-          <h2 class="section-title !mb-0">{{ title }}</h2>
-          <a [routerLink]="link" [queryParams]="query" class="text-sm font-medium text-brand hover:underline">View all</a>
-        </div>
+      <section class="container-x py-12">
+        <h2 class="section-title">{{ title }}</h2>
         <div class="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
           @for (p of items; track p.id) { <app-product-card [product]="p" /> }
+        </div>
+        <div class="mt-8 text-center">
+          <a [routerLink]="link" [queryParams]="query" class="inline-block border border-gray-900 px-8 py-3 text-sm font-medium uppercase tracking-[.2em] transition hover:bg-gray-900 hover:text-white">View all</a>
         </div>
       </section>
     </ng-template>
   `,
-  styles: `.section-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.25rem; }`,
+  styles: `.section-title { text-align: center; font-size: clamp(1.75rem, 3vw, 2.5rem); font-weight: 600; margin-bottom: 2rem; }
+    .section-title::after { content: ''; display: block; width: 4rem; height: 2px; margin: .75rem auto 0; background: var(--color-brand); }`,
 })
 export class Home {
   private readonly api = inject(Api);
   private readonly seo = inject(Seo);
   protected readonly settings = inject(SettingsStore);
-  protected readonly slide = signal(0);
-  private readonly slideCount = computed(() => this.data.value()?.hero.length ?? 0);
 
   protected readonly data = rxResource<HomeData, void>({
     stream: () =>
@@ -215,14 +184,13 @@ export class Home {
       '@context': 'https://schema.org', '@type': 'Organization', name: s.site_name, url: this.seo.absolute('/'),
       logo: s.logo_url ? this.seo.absolute(s.logo_url) : undefined, telephone: s.hotline,
     } });
-    effect((onCleanup) => {
-      const count = this.slideCount();
-      if (count < 2 || typeof window === 'undefined') return;
-      const timer = setInterval(() => this.step(count, 1), SLIDE_MS);
-      onCleanup(() => clearInterval(timer));
-    });
   }
 
-  protected goTo(i: number): void { this.slide.set(i); }
-  protected step(count: number, delta: number): void { this.slide.update((i) => (i + delta + count) % count); }
+  /** Hero banners; slides without an image borrow a category photo so the hero never renders empty. */
+  protected readonly heroSlides = computed(() => {
+    const d = this.data.value();
+    if (!d) return [];
+    const photos = d.categories.map((c) => c.image).filter((img): img is string => !!img);
+    return d.hero.map((b, i) => (b.image || !photos.length ? b : { ...b, image: photos[i % photos.length] }));
+  });
 }
