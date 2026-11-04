@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
@@ -33,24 +33,27 @@ const COLLAPSE_KEY = 'admin.sidebar-collapsed';
   selector: 'app-admin-layout',
   imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown.escape)': 'open.set(false)' },
+  host: { '(document:keydown.escape)': 'closeOverlays()' },
   template: `
     @if (open()) {
-      <div class="fixed inset-0 z-40 bg-gray-900/50 lg:hidden" (click)="open.set(false)" aria-hidden="true"></div>
+      <div class="fixed inset-0 z-40 bg-gray-900/50 backdrop-blur-[1px] lg:hidden" (click)="open.set(false)" aria-hidden="true"></div>
     }
     <div class="min-h-screen bg-gray-100 lg:flex">
       <aside
-        class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gray-900 text-gray-300 transition-transform lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:translate-x-0"
+        id="admin-sidebar"
+        class="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-gray-900 text-gray-300 shadow-xl transition-transform duration-200 lg:sticky lg:w-64 lg:max-w-none lg:shadow-none lg:top-0 lg:z-auto lg:h-screen lg:translate-x-0"
         [class.-translate-x-full]="!open()"
         [class.lg:w-16]="collapsed()"
-        [attr.aria-hidden]="!open()"
+        [class.invisible]="!open()"
+        [class.lg:visible]="true"
+        aria-label="Admin navigation"
       >
         <div class="flex items-center gap-2 px-4 py-4" [class.lg:justify-center]="collapsed()" [class.lg:px-2]="collapsed()">
-          <a routerLink="/admin" class="flex items-center gap-2 font-bold text-white">
+          <a routerLink="/admin" class="flex min-w-0 items-center gap-2 rounded-md font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
             <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand text-sm text-white">{{ initial() }}</span>
             @if (!collapsed()) { <span class="truncate">{{ settings.settings().site_name }} <span class="text-xs font-normal text-gray-400">admin</span></span> }
           </a>
-          <button type="button" class="ml-auto text-gray-400 hover:text-white lg:hidden" (click)="open.set(false)" aria-label="Close menu">
+          <button type="button" class="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-md text-gray-400 hover:bg-gray-800 hover:text-white focus-visible:outline-2 focus-visible:outline-white lg:hidden" (click)="open.set(false)" aria-label="Close menu">
             <app-icon name="close" [size]="20" />
           </button>
         </div>
@@ -65,8 +68,8 @@ const COLLAPSE_KEY = 'admin.sidebar-collapsed';
                   [routerLink]="item.path"
                   routerLinkActive="bg-gray-800 text-white"
                   [routerLinkActiveOptions]="{ exact: item.path === '/admin' }"
-                  (click)="open.set(false)"
-                  class="relative mx-2 flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-gray-800 hover:text-white"
+                  ariaCurrentWhenActive="page"
+                  class="relative mx-2 flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-gray-800 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white lg:min-h-10"
                   [class.justify-center]="collapsed()"
                   [class.px-2]="collapsed()"
                   [title]="item.label"
@@ -81,7 +84,7 @@ const COLLAPSE_KEY = 'admin.sidebar-collapsed';
         <div class="border-t border-gray-800 p-2">
           <button
             type="button"
-            class="hidden w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-400 hover:bg-gray-800 hover:text-white lg:flex"
+            class="hidden min-h-10 w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-400 focus-visible:outline-2 focus-visible:outline-white hover:bg-gray-800 hover:text-white lg:flex"
             [class.justify-center]="collapsed()"
             [class.px-2]="collapsed()"
             (click)="toggleCollapse()"
@@ -94,19 +97,19 @@ const COLLAPSE_KEY = 'admin.sidebar-collapsed';
         </div>
       </aside>
       <div class="flex min-w-0 flex-1 flex-col">
-        <header class="sticky top-0 z-30 flex items-center gap-3 border-b border-gray-200 bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
-          <button type="button" class="icon-btn lg:hidden" (click)="open.set(true)" aria-label="Open menu">
+        <header class="sticky top-0 z-30 flex min-h-14 items-center gap-2 border-b border-gray-200 bg-white/90 px-3 py-2 backdrop-blur sm:gap-3 sm:px-6">
+          <button type="button" class="icon-btn h-11 w-11 lg:hidden" (click)="open.set(true)" aria-label="Open menu" aria-controls="admin-sidebar" [attr.aria-expanded]="open()">
             <app-icon name="menu" [size]="20" />
           </button>
-          <p class="truncate text-sm font-semibold text-gray-900">{{ pageTitle() }}</p>
-          <a routerLink="/" class="icon-btn" target="_blank" title="View site" aria-label="View site (opens in a new tab)">
+          <p class="min-w-0 truncate text-sm font-semibold text-gray-900 sm:text-base">{{ pageTitle() }}</p>
+          <a routerLink="/" class="icon-btn hidden h-11 w-11 sm:inline-flex" target="_blank" title="View site" aria-label="View site (opens in a new tab)">
             <app-icon name="external" [size]="18" />
           </a>
           <div class="ml-auto flex items-center gap-2">
             <div class="relative">
               <button
                 type="button"
-                class="flex items-center gap-2 rounded-full p-1 pr-2 text-sm transition hover:bg-gray-100"
+                class="flex min-h-11 items-center gap-2 rounded-full p-1 pr-2 text-sm transition hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none"
                 (click)="menuOpen.set(!menuOpen())"
                 aria-haspopup="menu"
                 [attr.aria-expanded]="menuOpen()"
@@ -117,11 +120,16 @@ const COLLAPSE_KEY = 'admin.sidebar-collapsed';
                 <app-icon name="chevronDown" [size]="16" />
               </button>
               @if (menuOpen()) {
-                <div role="menu" class="absolute right-0 z-40 mt-2 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-                  <a role="menuitem" routerLink="/admin/account" (click)="menuOpen.set(false)" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <div class="fixed inset-0 z-30" (click)="menuOpen.set(false)" aria-hidden="true"></div>
+                <div role="menu" class="absolute right-0 z-40 mt-2 w-52 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                  <p class="truncate border-b border-gray-100 px-3 py-2 text-xs text-gray-500 sm:hidden">{{ auth.user()?.email }}</p>
+                  <a role="menuitem" routerLink="/" target="_blank" (click)="menuOpen.set(false)" class="flex min-h-11 items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 sm:hidden">
+                    <app-icon name="external" [size]="16" /> View site
+                  </a>
+                  <a role="menuitem" routerLink="/admin/account" (click)="menuOpen.set(false)" class="flex min-h-11 items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
                     <app-icon name="shield" [size]="16" /> My account
                   </a>
-                  <button role="menuitem" type="button" class="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50" (click)="logout()">
+                  <button role="menuitem" type="button" class="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50" (click)="logout()">
                     <app-icon name="logout" [size]="16" /> Sign out
                   </button>
                 </div>
@@ -129,7 +137,7 @@ const COLLAPSE_KEY = 'admin.sidebar-collapsed';
             </div>
           </div>
         </header>
-        <main class="flex-1 p-4 sm:p-6"><router-outlet /></main>
+        <main class="min-w-0 flex-1 overflow-x-clip p-4 pb-24 sm:p-6 sm:pb-24 md:pb-6"><div class="mx-auto w-full max-w-7xl"><router-outlet /></div></main>
       </div>
     </div>
   `,
@@ -152,6 +160,11 @@ export class AdminLayout {
   protected toggleCollapse(): void {
     this.collapsed.update((c) => !c);
     this.storage.set(COLLAPSE_KEY, this.collapsed());
+  }
+
+  protected closeOverlays(): void {
+    this.open.set(false);
+    this.menuOpen.set(false);
   }
 
   protected logout(): void {
@@ -181,5 +194,10 @@ export class AdminLayout {
 
   constructor() {
     inject(Seo).set({ title: 'Admin', noindex: true });
+    // Close the mobile drawer and account menu whenever navigation completes.
+    effect(() => {
+      this.url();
+      this.closeOverlays();
+    });
   }
 }

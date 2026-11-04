@@ -7,16 +7,17 @@ const WINDOW = 2;
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (pages() > 1) {
-      <nav aria-label="Pagination" class="mt-8 flex flex-wrap items-center justify-center gap-1">
-        <button type="button" class="btn-outline" [disabled]="page() <= 1" (click)="go(page() - 1)">Prev</button>
+      <nav aria-label="Pagination" class="mt-8 flex items-center justify-center gap-1 sm:gap-1.5">
+        <button type="button" class="btn-outline min-w-11 px-3" [disabled]="page() <= 1" (click)="go(page() - 1)" aria-label="Previous page"><span aria-hidden="true">&lsaquo;</span><span class="hidden sm:inline">Prev</span></button>
+        <span class="px-3 text-sm text-gray-600 sm:hidden" aria-live="polite">Page {{ page() }} of {{ pages() }}</span>
         @for (n of numbers(); track $index) {
-          @if (n === 0) { <span class="px-1">…</span> }
+          @if (n === 0) { <span class="hidden px-1 text-gray-400 sm:inline">…</span> }
           @else {
             <button type="button" (click)="go(n)" [attr.aria-current]="n === page() ? 'page' : null"
-                    [class]="n === page() ? 'btn-primary' : 'btn-outline'">{{ n }}</button>
+                    [class]="(n === page() ? 'btn-primary' : 'btn-outline') + ' hidden min-w-11 px-3 sm:inline-flex'">{{ n }}</button>
           }
         }
-        <button type="button" class="btn-outline" [disabled]="page() >= pages()" (click)="go(page() + 1)">Next</button>
+        <button type="button" class="btn-outline min-w-11 px-3" [disabled]="page() >= pages()" (click)="go(page() + 1)" aria-label="Next page"><span class="hidden sm:inline">Next</span><span aria-hidden="true">&rsaquo;</span></button>
       </nav>
     }
   `,

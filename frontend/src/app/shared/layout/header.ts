@@ -1,5 +1,15 @@
-import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, HostListener, computed, inject, signal } from '@angular/core';
+import { DOCUMENT, NgOptimizedImage, isPlatformBrowser } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  HostListener,
+  PLATFORM_ID,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
@@ -30,12 +40,18 @@ const SCROLL_SHRINK_PX = 24;
         class="relative flex items-center gap-3 px-4 transition-[height] duration-200 sm:px-6 lg:px-5"
         [style.height.px]="scrolled() ? 68 : 88"
       >
-        <button type="button" class="lg:hidden" (click)="drawer.set(true)" aria-label="Open menu">
+        <button
+          type="button"
+          class="icon-btn -ml-2 min-h-11 min-w-11 text-gray-800 lg:hidden"
+          (click)="drawer.set(true)"
+          aria-label="Open menu"
+          [attr.aria-expanded]="drawer()"
+        >
           <app-icon name="menu" [size]="26" />
         </button>
         <a
           routerLink="/"
-          class="flex shrink-0 items-center text-xl font-bold tracking-tight text-brand xl:text-2xl"
+          class="flex min-w-0 shrink items-center truncate rounded-md text-xl focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none font-bold tracking-tight text-brand xl:text-2xl"
           [attr.aria-label]="s().site_name + ' home'"
         >
           @if (s().logo_url) {
@@ -45,17 +61,17 @@ const SCROLL_SHRINK_PX = 24;
               height="48"
               width="168"
               priority
-              class="h-10 w-auto object-contain xl:h-12"
+              class="h-9 w-auto max-w-[45vw] object-contain sm:h-10 xl:h-12"
             />
           } @else {
             {{ s().site_name }}
           }
         </a>
         <div class="hidden flex-1 lg:block"><app-mega-menu [tree]="tree()" /></div>
-        <nav class="ml-auto flex items-center gap-1 sm:gap-2 lg:ml-0" aria-label="Quick links">
+        <nav class="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1 lg:ml-0" aria-label="Quick links">
           <button
             type="button"
-            class="p-2 hover:text-brand"
+            class="icon-btn relative min-h-11 min-w-11 text-gray-800 hover:text-brand"
             (click)="searchOpen.set(true)"
             aria-label="Search"
           >
@@ -63,7 +79,7 @@ const SCROLL_SHRINK_PX = 24;
           </button>
           <a
             routerLink="/wishlist"
-            class="relative hidden p-2 hover:text-brand sm:block"
+            class="icon-btn relative hidden min-h-11 min-w-11 text-gray-800 hover:text-brand sm:inline-flex"
             [attr.aria-label]="'Wishlist ' + wishlist.count()"
             ><app-icon name="heart" [size]="24" />
             @if (wishlist.count()) {
@@ -72,7 +88,7 @@ const SCROLL_SHRINK_PX = 24;
           </a>
           <a
             routerLink="/cart"
-            class="relative p-2 hover:text-brand"
+            class="icon-btn relative min-h-11 min-w-11 text-gray-800 hover:text-brand"
             [attr.aria-label]="'Cart ' + cart.count()"
             ><app-icon name="cart" [size]="24" /> <span class="badge">{{ cart.count() }}</span></a
           >
@@ -88,12 +104,12 @@ const SCROLL_SHRINK_PX = 24;
           (click)="searchOpen.set(false)"
           aria-label="Close search"
         ></button>
-        <div class="relative bg-white py-8 shadow-xl">
+        <div class="relative bg-white py-4 shadow-xl sm:py-8">
           <div class="container-x flex items-center gap-3">
             <div class="flex-1" (click)="onSearchClick($event)"><app-search-box /></div>
             <button
               type="button"
-              class="p-2"
+              class="icon-btn min-h-11 min-w-11"
               (click)="searchOpen.set(false)"
               aria-label="Close search"
             >
@@ -113,22 +129,29 @@ const SCROLL_SHRINK_PX = 24;
           aria-label="Close menu"
         ></button>
         <div
-          class="absolute inset-y-0 left-0 w-80 max-w-[85vw] overflow-y-auto bg-white p-4 shadow-xl"
+          class="absolute inset-y-0 left-0 flex w-80 max-w-[85vw] flex-col overflow-y-auto overscroll-contain bg-white shadow-xl"
         >
-          <div class="mb-3 flex items-center justify-between">
-            <span class="font-bold text-brand">{{ s().site_name }}</span>
-            <button type="button" (click)="drawer.set(false)" aria-label="Close menu">
+          <div
+            class="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2"
+          >
+            <span class="truncate font-bold text-brand">{{ s().site_name }}</span>
+            <button
+              type="button"
+              class="icon-btn min-h-11 min-w-11"
+              (click)="drawer.set(false)"
+              aria-label="Close menu"
+            >
               <app-icon name="close" />
             </button>
           </div>
-          <ul class="divide-y">
+          <ul class="divide-y divide-gray-100 px-4 pb-6">
             @for (top of navTree(); track top.id) {
               <li class="py-1">
                 <div class="flex items-center justify-between">
                   <a
                     [routerLink]="['/category', top.slug]"
                     (click)="drawer.set(false)"
-                    class="flex-1 py-2 font-medium"
+                    class="flex min-h-12 flex-1 items-center font-medium hover:text-brand"
                     >{{ top.name }}</a
                   >
                   @if (top.children.length) {
@@ -137,20 +160,25 @@ const SCROLL_SHRINK_PX = 24;
                       (click)="toggle(top.id)"
                       [attr.aria-expanded]="expanded() === top.id"
                       [attr.aria-label]="'Toggle ' + top.name"
-                      class="p-2"
+                      class="icon-btn min-h-11 min-w-11"
                     >
-                      <app-icon name="chevronDown" [size]="18" />
+                      <app-icon
+                        name="chevronDown"
+                        [size]="18"
+                        class="transition-transform"
+                        [class.rotate-180]="expanded() === top.id"
+                      />
                     </button>
                   }
                 </div>
                 @if (expanded() === top.id) {
-                  <ul class="mb-2 ml-3 space-y-1 border-l pl-3">
+                  <ul class="mb-2 ml-1 border-l border-gray-200 pl-3">
                     @for (cat of top.children; track cat.id) {
                       <li>
                         <a
                           [routerLink]="['/category', cat.slug]"
                           (click)="drawer.set(false)"
-                          class="block py-1 text-sm text-gray-700"
+                          class="flex min-h-11 items-center text-sm text-gray-700 hover:text-brand"
                           >{{ cat.name }}</a
                         >
                       </li>
@@ -160,22 +188,22 @@ const SCROLL_SHRINK_PX = 24;
               </li>
             }
             <li>
-              <a routerLink="/showrooms" (click)="drawer.set(false)" class="block py-3 font-medium"
+              <a routerLink="/showrooms" (click)="drawer.set(false)" class="flex min-h-12 items-center font-medium hover:text-brand"
                 >Showrooms</a
               >
             </li>
             <li>
-              <a routerLink="/blog" (click)="drawer.set(false)" class="block py-3 font-medium"
+              <a routerLink="/blog" (click)="drawer.set(false)" class="flex min-h-12 items-center font-medium hover:text-brand"
                 >Inspiration</a
               >
             </li>
             <li>
-              <a routerLink="/contact" (click)="drawer.set(false)" class="block py-3 font-medium"
+              <a routerLink="/contact" (click)="drawer.set(false)" class="flex min-h-12 items-center font-medium hover:text-brand"
                 >Contact</a
               >
             </li>
             <li>
-              <a routerLink="/compare" (click)="drawer.set(false)" class="block py-3 font-medium"
+              <a routerLink="/compare" (click)="drawer.set(false)" class="flex min-h-12 items-center font-medium hover:text-brand"
                 >Compare</a
               >
             </li>
@@ -220,6 +248,20 @@ export class Header {
 
   protected readonly navTree = computed(() => orderNav(this.tree()));
 
+  private readonly document = inject(DOCUMENT);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  constructor() {
+    // Lock page scroll while an overlay is open (browser only; SSR never touches body).
+    effect(() => {
+      const locked = this.drawer() || this.searchOpen();
+      if (this.isBrowser) this.document.body.style.overflow = locked ? 'hidden' : '';
+    });
+    inject(DestroyRef).onDestroy(() => {
+      if (this.isBrowser) this.document.body.style.overflow = '';
+    });
+  }
+
   @HostListener('window:scroll')
   protected onScroll(): void {
     this.scrolled.set(window.scrollY > SCROLL_SHRINK_PX);
@@ -229,6 +271,7 @@ export class Header {
   protected onKey(e: KeyboardEvent): void {
     if (e.key === 'Escape') {
       this.searchOpen.set(false);
+      this.drawer.set(false);
       return;
     }
     const target = e.target as HTMLElement | null;
