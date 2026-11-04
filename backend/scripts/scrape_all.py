@@ -103,7 +103,8 @@ def run_content(limit: int | None) -> StageResult:
 
     report = ContentImporter(ScraperConfig(), SessionLocal).run(list(CONTENT_KINDS), limit=limit)
     return StageResult("content", report.created, report.updated, report.failed,
-                       note=f"{report.images_stored} images stored")
+                       note=f"{report.images_stored} images stored, "
+                            f"{report.images_purged} seed placeholders removed")
 
 
 def verify() -> StageResult:

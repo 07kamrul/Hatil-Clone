@@ -184,10 +184,16 @@ class ProductImporter:
         return parent
 
     def _maybe_image_category(self, product: Product) -> None:
-        """hatil.com exposes no category images; use the first product photo until an admin uploads one."""
+        """hatil.com exposes no category images; use the first product photo, replacing seed placeholders."""
+        from scraper.demo_cleanup import is_seed_image, purge_seed_category_image
+
         category = product.category
-        if category is None or category.image or not product.images:
+        if category is None or not product.images:
             return
+        if category.image and not is_seed_image(category.image):
+            return  # a real photo is already there (admin upload or a previous import)
+        if purge_seed_category_image(self.db, get_storage(), category):
+            log.info("Replaced seed image for category %s", category.slug)
         category.image = product.images[0].thumb_path or product.images[0].path
 
     def _attach_images(self, product: Product, urls: list[str], replace: bool, is_dimension: bool = False) -> None:

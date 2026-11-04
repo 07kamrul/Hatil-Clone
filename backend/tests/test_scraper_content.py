@@ -248,3 +248,65 @@ def test_content_run_is_idempotent(db, importer) -> None:
     assert len(db.scalars(select(Banner)).all()) == len(banners_before)
     assert second.created == 0
     assert first.created >= 4
+
+
+# ---------- seed placeholder cleanup ----------
+def _seed_rows(db) -> None:
+    """Insert demo rows the way scripts.seed --demo would (seed- image marker)."""
+    from app.core.enums import BannerPlacement
+
+    db.add(Showroom(slug="gulshan-flagship", name="Gulshan Flagship", city="Dhaka", address="Road 45",
+                    image="/uploads/showrooms/seed-gulshan-flagship-ab12.webp", sort_order=0))
+    db.add(BlogPost(slug="5-ways-to-make-a-small-living-room-feel-bigger", title="Small living room",
+                    body_html="<p>x</p>", cover_image="/uploads/blog/seed-small-room-cd34.webp",
+                    is_published=True))
+    db.add(Banner(title="Sleep better", image="/uploads/banners/seed-sleep-better-ef56.webp",
+                  placement=BannerPlacement.HERO, sort_order=0, is_active=True))
+    db.add(Banner(title="Admin pick", image="/uploads/banners/real-photo-aa11.webp",
+                  placement=BannerPlacement.PROMO, sort_order=1, is_active=True))
+    db.commit()
+
+
+def test_successful_scrape_removes_seed_rows_but_keeps_admin_rows(db, importer) -> None:
+    _seed_rows(db)
+
+    report = importer.run(["showrooms", "banners", "blog"])
+
+    assert report.failed == 0, report.failures
+    slugs = {s.slug for s in db.scalars(select(Showroom)).all()}
+    assert "gulshan-flagship" not in slugs  # seed placeholder removed
+    assert "hatil-furniture-agrabad" in slugs  # real scraped row stays
+    posts = {p.slug for p in db.scalars(select(BlogPost)).all()}
+    assert "5-ways-to-make-a-small-living-room-feel-bigger" not in posts
+    assert "some-post" in posts
+    banners = {b.title for b in db.scalars(select(Banner)).all()}
+    assert "Sleep better" not in banners  # seed banner removed once real banners arrived
+    assert "Admin pick" in banners  # non-seed image untouched
+    assert "Hero" in banners  # scraped banner created
+    assert report.images_purged == 3
+
+
+def test_failed_scrape_keeps_seed_rows(db, monkeypatch, importer) -> None:
+    _seed_rows(db)
+    from scraper.http import FetchError
+
+    def boom(url: str) -> str:
+        if url.endswith("/sitemap.xml"):
+            return SITEMAP
+        raise FetchError("source down")
+
+    monkeypatch.setattr(importer.client, "get_text", boom)
+    report = importer.run(["showrooms"])
+
+    assert report.failed == 1
+    assert {s.slug for s in db.scalars(select(Showroom)).all()} == {"gulshan-flagship"}
+    assert report.images_purged == 0
+
+
+def test_is_seed_image_detection() -> None:
+    from scraper.demo_cleanup import is_seed_image
+
+    assert is_seed_image("/uploads/banners/seed-sleep-better-ab12.webp")
+    assert not is_seed_image("/uploads/banners/real-photo-ab12.webp")
+    assert not is_seed_image(None)
+    assert not is_seed_image("https://hatil.com/x/seeded.webp")  # marker must be its own segment

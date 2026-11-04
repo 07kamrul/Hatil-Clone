@@ -3,7 +3,9 @@
 Storage rule: text and structured data go into the database; every image is downloaded, re-encoded as
 WebP through StorageService.save_image (into UPLOAD_DIR, the hatil-uploads volume in production) and
 only its relative /uploads/... path is stored. `localize_html` rewrites <img src> inside page and blog
-bodies so nothing hotlinks hatil.com. Upserts are idempotent; banners are create-only.
+bodies so nothing hotlinks hatil.com. Upserts are idempotent; banners are create-only, except that
+demo rows created by `scripts.seed --demo` (recognised by their `seed-` image marker) are removed once
+real scraped content arrives, so the site never shows generated placeholders next to real photos.
 """
 
 import logging
@@ -34,6 +36,7 @@ from scraper.content import (
     parse_page,
     parse_showroom,
 )
+from scraper.demo_cleanup import purge_seed_banners, purge_seed_blog, purge_seed_showrooms
 from scraper.discovery import parse_sitemap
 from scraper.http import FetchError, PoliteClient, RobotsDisallowedError
 
@@ -57,6 +60,7 @@ class ContentReport:
     updated: int = 0
     failed: int = 0
     images_stored: int = 0
+    images_purged: int = 0
     failures: list[dict[str, str]] = field(default_factory=list)
 
 
@@ -102,6 +106,8 @@ class ContentImporter:
             if "showrooms" in kinds:
                 self._run_items(db, report, discovered.get("showrooms", []), parse_showroom, limit,
                                 self._upsert_showroom)
+                if report.created or report.updated:
+                    report.images_purged += purge_seed_showrooms(db, self.storage)  # demo placeholders out
             if "pages" in kinds:
                 self._run_items(db, report, discovered.get("pages", []), parse_page, limit,
                                 self._upsert_page)
@@ -111,6 +117,8 @@ class ContentImporter:
             if "blog" in kinds:
                 self._run_items(db, report, discovered.get("blog", []), parse_blog_post, limit,
                                 self._upsert_blog)
+                if report.created or report.updated:
+                    report.images_purged += purge_seed_blog(db, self.storage)
             db.commit()
         report.images_stored = self.images_stored
         return report
@@ -145,6 +153,8 @@ class ContentImporter:
                 db.add(self._banner_row(banner))
                 existing.add(key)
                 report.created += 1
+            if banners:
+                report.images_purged += purge_seed_banners(db, self.storage)
         except (FetchError, RobotsDisallowedError, ContentParseError, ValueError) as exc:
             report.failed += 1
             report.failures.append({"url": url, "error": str(exc)[:300]})

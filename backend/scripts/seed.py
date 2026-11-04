@@ -105,7 +105,8 @@ def seed_taxonomy(db: Session) -> None:
 def seed_category_images(db: Session) -> None:
     storage = get_storage()
     for i, category in enumerate(db.scalars(select(Category).where(Category.image.is_(None)))):
-        img = storage.save_image(placeholder_image("", (800, 600), PALETTE[i % len(PALETTE)]), "categories", category.slug)
+        img = storage.save_image(placeholder_image("", (800, 600), PALETTE[i % len(PALETTE)]),
+                                 "categories", f"seed-{category.slug}")
         category.image = img.url
 
 
@@ -120,12 +121,13 @@ def seed_content(db: Session) -> None:
         slug = slugify(str(room["name"]))
         if not db.scalar(select(Showroom.id).where(Showroom.slug == slug)):
             img = storage.save_image(placeholder_image(str(room["name"]), (800, 500), PALETTE[i % len(PALETTE)]),
-                                     "showrooms", slug)
+                                     "showrooms", f"seed-{slug}")
             db.add(Showroom(slug=slug, image=img.url, sort_order=i, **room))
     for i, (title, excerpt, body) in enumerate(data.BLOG_POSTS):
         slug = slugify(title)
         if not db.scalar(select(BlogPost.id).where(BlogPost.slug == slug)):
-            img = storage.save_image(placeholder_image(title[:28], (1200, 630), PALETTE[i % len(PALETTE)]), "blog", slug)
+            img = storage.save_image(placeholder_image(title[:28], (1200, 630), PALETTE[i % len(PALETTE)]),
+                                     "blog", f"seed-{slug}")
             db.add(BlogPost(title=title, slug=slug, excerpt=excerpt, body_html=body, cover_image=img.url,
                             author="Editorial Team", is_published=True, published_at=datetime.now(UTC)))
 
@@ -137,7 +139,8 @@ def seed_banners(db: Session) -> None:
     groups = [(BannerPlacement.HERO, data.HERO_BANNERS, (1600, 600)), (BannerPlacement.OFFER, data.OFFER_BANNERS, (800, 400))]
     for placement, banners, size in groups:
         for i, (title, subtitle, link, button) in enumerate(banners):
-            img = storage.save_image(placeholder_image("", size, PALETTE[i % len(PALETTE)]), "banners", title)
+            img = storage.save_image(placeholder_image("", size, PALETTE[i % len(PALETTE)]),
+                                     "banners", f"seed-{slugify(title)}")
             db.add(Banner(title=title, subtitle=subtitle, image=img.url, link_url=link, button_text=button,
                           placement=placement, sort_order=i))
 
