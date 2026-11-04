@@ -12,7 +12,16 @@ import { API_BASE_META } from './app/core/config';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+// Nginx (or the host's proxy) sits in front of the SSR server; trust its x-forwarded-*
+// headers so Angular sees the real client host/proto instead of warning about them.
+const TRUSTED_PROXY_HEADERS = [
+  'x-forwarded-for',
+  'x-forwarded-host',
+  'x-forwarded-port',
+  'x-forwarded-proto',
+  'x-forwarded-server',
+];
+const angularApp = new AngularNodeAppEngine({ trustProxyHeaders: TRUSTED_PROXY_HEADERS });
 
 // Runtime API base the browser should call (e.g. https://api.example.com/api/v1). Unset = same-origin /api/v1.
 // An invalid value is logged and ignored (same-origin fallback) so the server still starts instead of 502ing.

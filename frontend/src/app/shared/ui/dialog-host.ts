@@ -93,7 +93,9 @@ export class DialogHost {
 
   constructor() {
     // Focus + scroll lock react to every dialog opening; cleared when it closes.
+    // Effects also run during SSR, so skip browser-only DOM access on the server.
     effect(() => {
+      if (typeof document === 'undefined') return;
       const req = this.dialog.state();
       if (!req) {
         document.body.style.overflow = '';
@@ -112,7 +114,7 @@ export class DialogHost {
       });
     });
     inject(DestroyRef).onDestroy(() => {
-      document.body.style.overflow = '';
+      if (typeof document !== 'undefined') document.body.style.overflow = '';
     });
   }
 

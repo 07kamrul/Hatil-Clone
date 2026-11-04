@@ -1,5 +1,13 @@
 import { DatePipe, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
@@ -22,12 +30,28 @@ export function wrapIndex(current: number, delta: number, count: number): number
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (data.value(); as d) {
-      <app-breadcrumbs [crumbs]="[{ label: 'Inspiration', link: ['/blog'] }, { label: d.post.title }]" />
+      <app-breadcrumbs
+        [crumbs]="[{ label: 'Inspiration', link: ['/blog'] }, { label: d.post.title }]"
+      />
       <article class="container-x max-w-3xl pb-10">
         <h1 class="text-3xl font-bold leading-tight">{{ d.post.title }}</h1>
-        <p class="mt-2 text-sm text-gray-500">{{ d.post.published_at | date: 'longDate' }}@if (d.post.author) { · {{ d.post.author }} }</p>
+        <p class="mt-2 text-sm text-gray-500">
+          {{ d.post.published_at | date: 'longDate' }}
+          @if (d.post.author) {
+            · {{ d.post.author }}
+          }
+        </p>
         @if (d.post.cover_image) {
-          <div class="relative mt-6 aspect-[16/9] overflow-hidden rounded-lg"><img [ngSrc]="d.post.cover_image" [alt]="d.post.title" fill priority sizes="(min-width:768px) 768px, 100vw" class="object-cover" /></div>
+          <div class="relative mt-6 aspect-[16/9] overflow-hidden rounded-lg">
+            <img
+              [ngSrc]="d.post.cover_image"
+              [alt]="d.post.title"
+              fill
+              priority
+              sizes="(min-width:768px) 768px, 100vw"
+              class="object-cover"
+            />
+          </div>
         }
         <div class="prose-content mt-6" [innerHTML]="d.post.body_html"></div>
         @if (gallery().length) {
@@ -35,8 +59,19 @@ export function wrapIndex(current: number, delta: number, count: number): number
             <h2 class="mb-3 text-lg font-semibold">Photos</h2>
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
               @for (img of gallery(); track $index) {
-                <button type="button" (click)="lightbox.set($index)" class="group relative aspect-[4/3] overflow-hidden rounded-lg bg-gray-200" [attr.aria-label]="'Open photo ' + ($index + 1)">
-                  <img [ngSrc]="img" [alt]="d.post.title + ' photo ' + ($index + 1)" fill sizes="(min-width:768px) 250px, 50vw" class="object-cover transition-transform group-hover:scale-105" />
+                <button
+                  type="button"
+                  (click)="lightbox.set($index)"
+                  class="group relative aspect-[4/3] overflow-hidden rounded-lg bg-gray-200"
+                  [attr.aria-label]="'Open photo ' + ($index + 1)"
+                >
+                  <img
+                    [ngSrc]="img"
+                    [alt]="d.post.title + ' photo ' + ($index + 1)"
+                    fill
+                    sizes="(min-width:768px) 250px, 50vw"
+                    class="object-cover transition-transform group-hover:scale-105"
+                  />
                 </button>
               }
             </div>
@@ -44,14 +79,48 @@ export function wrapIndex(current: number, delta: number, count: number): number
         }
       </article>
       @if (lightbox() !== null) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" (click)="lightbox.set(null)" role="dialog" aria-modal="true" [attr.aria-label]="d.post.title + ' photos'">
-          <button type="button" class="absolute top-4 right-4 text-3xl leading-none text-white" (click)="lightbox.set(null)" aria-label="Close">×</button>
+        <div
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          (click)="lightbox.set(null)"
+          role="dialog"
+          aria-modal="true"
+          [attr.aria-label]="d.post.title + ' photos'"
+        >
+          <button
+            type="button"
+            class="absolute top-4 right-4 text-3xl leading-none text-white"
+            (click)="lightbox.set(null)"
+            aria-label="Close"
+          >
+            ×
+          </button>
           @if (gallery().length > 1) {
-            <button type="button" class="absolute left-4 text-4xl text-white" (click)="step(-1, $event)" aria-label="Previous photo">‹</button>
-            <button type="button" class="absolute right-4 text-4xl text-white" (click)="step(1, $event)" aria-label="Next photo">›</button>
+            <button
+              type="button"
+              class="absolute left-4 text-4xl text-white"
+              (click)="step(-1, $event)"
+              aria-label="Previous photo"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              class="absolute right-4 text-4xl text-white"
+              (click)="step(1, $event)"
+              aria-label="Next photo"
+            >
+              ›
+            </button>
           }
-          <img [src]="gallery()[lightbox()!]" [alt]="d.post.title + ' photo ' + ((lightbox() ?? 0) + 1)" class="max-h-full max-w-full object-contain" (click)="$event.stopPropagation()" />
-          <p class="absolute bottom-4 text-sm text-white/80">{{ (lightbox() ?? 0) + 1 }} / {{ gallery().length }}</p>
+          <img
+            [src]="gallery()[lightbox()!]"
+            [alt]="d.post.title + ' photo ' + ((lightbox() ?? 0) + 1)"
+            class="max-h-full max-w-full object-contain"
+            (click)="$event.stopPropagation()"
+          />
+          <p class="absolute bottom-4 text-sm text-white/80">
+            {{ (lightbox() ?? 0) + 1 }} / {{ gallery().length }}
+          </p>
         </div>
       }
       @if (d.related.length) {
@@ -61,7 +130,15 @@ export function wrapIndex(current: number, delta: number, count: number): number
             @for (r of d.related; track r.id) {
               <a [routerLink]="['/blog', r.slug]" class="group block">
                 <div class="relative aspect-[16/10] overflow-hidden rounded-lg bg-gray-200">
-                  @if (r.cover_image) { <img [ngSrc]="r.cover_image" [alt]="r.title" fill sizes="(min-width:640px) 33vw, 100vw" class="object-cover" /> }
+                  @if (r.cover_image) {
+                    <img
+                      [ngSrc]="r.cover_image"
+                      [alt]="r.title"
+                      fill
+                      sizes="(min-width:640px) 33vw, 100vw"
+                      class="object-cover"
+                    />
+                  }
                 </div>
                 <h3 class="mt-2 font-medium group-hover:text-brand">{{ r.title }}</h3>
               </a>
@@ -70,7 +147,10 @@ export function wrapIndex(current: number, delta: number, count: number): number
         </section>
       }
     } @else if (!data.isLoading()) {
-      <div class="container-x py-24 text-center"><h1 class="text-2xl font-bold">Post not found</h1><a routerLink="/blog" class="btn-primary mt-6">Back to blog</a></div>
+      <div class="container-x py-24 text-center">
+        <h1 class="text-2xl font-bold">Post not found</h1>
+        <a routerLink="/blog" class="btn-primary mt-6">Back to blog</a>
+      </div>
     }
   `,
 })
@@ -80,12 +160,18 @@ export class BlogDetail {
   private readonly seo = inject(Seo);
   private readonly settings = inject(SettingsStore);
 
-  protected readonly data = rxResource<{ post: BlogPost; related: BlogSummary[] } | undefined, string>({
+  protected readonly data = rxResource<
+    { post: BlogPost; related: BlogSummary[] } | undefined,
+    string
+  >({
     params: () => this.slug(),
-    stream: ({ params }) => this.api.blogPost(params).pipe(catchError(() => {
-      this.seo.setStatus(404);
-      return of(undefined);
-    })),
+    stream: ({ params }) =>
+      this.api.blogPost(params).pipe(
+        catchError(() => {
+          this.seo.setStatus(404);
+          return of(undefined);
+        }),
+      ),
   });
 
   protected readonly gallery = computed(() => this.data.value()?.post.gallery ?? []);
@@ -102,12 +188,21 @@ export class BlogDetail {
       const post = this.data.value()?.post;
       if (!post) return;
       this.seo.set({
-        title: post.seo_title || post.title, description: post.seo_description || post.excerpt, image: post.cover_image,
-        path: `/blog/${post.slug}`, type: 'article',
+        title: post.seo_title || post.title,
+        description: post.seo_description || post.excerpt,
+        image: post.cover_image,
+        path: `/blog/${post.slug}`,
+        type: 'article',
         jsonLd: {
-          '@context': 'https://schema.org', '@type': 'BlogPosting', headline: post.title, datePublished: post.published_at,
+          '@context': 'https://schema.org',
+          '@type': 'BlogPosting',
+          headline: post.title,
+          datePublished: post.published_at,
           image: post.cover_image ? this.seo.absolute(post.cover_image) : undefined,
-          author: { '@type': 'Organization', name: post.author || this.settings.settings().site_name },
+          author: {
+            '@type': 'Organization',
+            name: post.author || this.settings.settings().site_name,
+          },
           publisher: { '@type': 'Organization', name: this.settings.settings().site_name },
         },
       });
