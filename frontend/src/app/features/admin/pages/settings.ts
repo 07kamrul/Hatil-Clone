@@ -5,8 +5,9 @@ import { SettingsStore } from '../../../core/settings-store';
 import { Toast } from '../../../core/toast';
 import { AdminApi, apiError } from '../core/admin-api';
 import { ImageInput } from '../ui/image-input';
+import { MapPointPicker, MapPointValue } from '../ui/map-point-picker';
 
-type Kind = 'text' | 'textarea' | 'color' | 'image' | 'checkbox';
+type Kind = 'text' | 'textarea' | 'color' | 'image' | 'checkbox' | 'map';
 interface SettingField { key: string; label: string; kind: Kind; help?: string }
 
 const GROUPS: { title: string; fields: SettingField[] }[] = [
@@ -32,6 +33,7 @@ const GROUPS: { title: string; fields: SettingField[] }[] = [
     { key: 'hotline', label: 'Hotline', kind: 'text' },
     { key: 'contact_email', label: 'Email', kind: 'text' },
     { key: 'address', label: 'Address', kind: 'textarea' },
+    { key: 'map_link', label: 'Map location', kind: 'map', help: 'Shown on the contact page with a directions button.' },
   ] },
   { title: 'Social links', fields: [
     { key: 'social_facebook', label: 'Facebook URL', kind: 'text' },
@@ -43,7 +45,7 @@ const GROUPS: { title: string; fields: SettingField[] }[] = [
 
 @Component({
   selector: 'app-admin-settings',
-  imports: [FormsModule, ImageInput],
+  imports: [FormsModule, ImageInput, MapPointPicker],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1 class="mb-5 text-2xl font-bold">Settings</h1>
@@ -59,6 +61,10 @@ const GROUPS: { title: string; fields: SettingField[] }[] = [
                   @case ('textarea') { <label class="label" [for]="f.key">{{ f.label }}</label><textarea [id]="f.key" [name]="f.key" rows="4" class="input" [(ngModel)]="values[f.key]"></textarea> }
                   @case ('color') { <label class="label" [for]="f.key">{{ f.label }}</label><input [id]="f.key" type="color" [name]="f.key" class="h-10 w-20 rounded border" [(ngModel)]="values[f.key]" /> }
                   @case ('image') { <span class="label">{{ f.label }}</span><app-image-input [name]="f.key" folder="branding" [(ngModel)]="values[f.key]" /> }
+                  @case ('map') {
+                    <span class="label">{{ f.label }}</span>
+                    <app-map-point-picker [(value)]="mapValue" />
+                  }
                   @default { <label class="label" [for]="f.key">{{ f.label }}</label><input [id]="f.key" [name]="f.key" class="input" [(ngModel)]="values[f.key]" /> }
                 }
                 @if (f.help) { <p class="mt-1 text-xs text-gray-500">{{ f.help }}</p> }
@@ -82,6 +88,19 @@ export class AdminSettings {
   protected readonly error = signal<string | null>(null);
   protected values: Record<string, unknown> = {};
 
+  /** Flat setting rows re-shaped as the picker's object; writes go back per key. */
+  protected get mapValue(): MapPointValue {
+    return {
+      map_lat: Number(this.values['map_lat'] ?? 0),
+      map_lng: Number(this.values['map_lng'] ?? 0),
+      map_zoom: Number(this.values['map_zoom'] ?? 15),
+      map_link: String(this.values['map_link'] ?? ''),
+    };
+  }
+  protected set mapValue(v: MapPointValue) {
+    this.values = { ...this.values, ...v };
+  }
+
   constructor() {
     this.api.settings().subscribe({
       next: (v) => {
@@ -95,7 +114,9 @@ export class AdminSettings {
   protected save(event: Event): void {
     event.preventDefault();
     const keys = GROUPS.flatMap((g) => g.fields.map((f) => f.key));
-    const payload = Object.fromEntries(keys.map((k) => [k, this.values[k] ?? '']));
+    const payload = Object.fromEntries(
+      [...keys, 'map_lat', 'map_lng', 'map_zoom'].map((k) => [k, this.values[k] ?? (k === 'map_zoom' ? 15 : '')]),
+    );
     this.saving.set(true);
     this.error.set(null);
     this.api.saveSettings(payload).subscribe({

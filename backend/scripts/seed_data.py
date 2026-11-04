@@ -50,7 +50,6 @@ _LOREM = (
 PAGES: list[tuple[str, str, str]] = [
     ("About Us", "about", "<h2>Who we are</h2>" + _LOREM +
      "<p>From living rooms to offices, our collection covers every space of a modern home.</p>"),
-    ("Contact", "contact", "<p>Reach us by phone, WhatsApp or the contact form. Our team replies within one working day.</p>"),
     ("Careers", "careers", "<h2>Work with us</h2><p>We are always looking for designers, craftspeople and sales "
      "associates. Send your CV through the contact form with the subject \"Careers\".</p>"),
     ("FAQ", "faq", "<p>Answers to the questions we hear most often.</p>"),

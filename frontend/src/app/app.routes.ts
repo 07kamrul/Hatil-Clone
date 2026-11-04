@@ -23,6 +23,7 @@ export const routes: Routes = [
       { path: 'blog/:slug', loadComponent: () => import('./features/blog/blog-detail').then((m) => m.BlogDetail) },
       { path: 'contact', loadComponent: () => import('./features/contact/contact-page').then((m) => m.ContactPage) },
       { path: 'faq', loadComponent: () => import('./features/pages/faq-page').then((m) => m.FaqPage) },
+      { path: 'page/contact', redirectTo: '/contact', pathMatch: 'full' },
       { path: 'page/:slug', loadComponent: () => import('./features/pages/cms-page').then((m) => m.CmsPageView) },
       { path: '**', loadComponent: () => import('./features/pages/not-found').then((m) => m.NotFound) },
     ],

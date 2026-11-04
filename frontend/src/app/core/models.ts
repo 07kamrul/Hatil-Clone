@@ -167,6 +167,10 @@ export interface SiteSettings {
   hotline: string;
   contact_email: string;
   address: string;
+  map_lat: number;
+  map_lng: number;
+  map_zoom: number;
+  map_link: string;
   currency: string;
   currency_symbol: string;
   message_template: string;
