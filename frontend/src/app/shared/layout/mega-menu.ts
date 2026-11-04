@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 
 import { CategoryNode } from '../../core/models';
 import { Icon } from '../ui/icon';
-import { splitNav } from './nav-split';
+import { orderNav, splitNav } from './nav-split';
 
 const MORE_ID = -1;
 
@@ -18,7 +18,7 @@ const MORE_ID = -1;
         @for (item of split().visible; track item.node.id) {
           <li
             (mouseenter)="active.set(item.node.id)"
-            [class]="item.isWideOnly ? 'hidden 2xl:block' : ''"
+            [class]="item.isWideOnly ? 'hidden xl:block' : ''"
           >
             <a
               [routerLink]="['/category', item.node.slug]"
@@ -46,7 +46,7 @@ const MORE_ID = -1;
               class="absolute right-0 top-full z-50 w-60 rounded-b-md border-t-2 border-brand bg-white py-2 shadow-xl"
             >
               @for (item of split().overflow; track item.node.id) {
-                <li [class]="item.isWideOnly ? '2xl:hidden' : ''">
+                <li [class]="item.isWideOnly ? 'xl:hidden' : ''">
                   <a
                     [routerLink]="['/category', item.node.slug]"
                     (click)="close()"
@@ -100,7 +100,7 @@ const MORE_ID = -1;
       display: block;
       padding: 0 0.9rem;
       line-height: var(--header-h, 88px);
-      font-size: 1.05rem;
+      font-size: clamp(.95rem, 1.05vw, 1.1rem);
       font-weight: 500;
       color: #1f2937;
       white-space: nowrap;
@@ -129,7 +129,7 @@ export class MegaMenu {
   readonly navigated = output<void>();
   protected readonly moreId = MORE_ID;
   protected readonly active = signal<number | null>(null);
-  protected readonly split = computed(() => splitNav(this.tree()));
+  protected readonly split = computed(() => splitNav(orderNav(this.tree())));
 
   protected close(): void {
     this.active.set(null);

@@ -1,5 +1,5 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, HostListener, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
@@ -11,6 +11,7 @@ import { WishlistStore } from '../../core/lists';
 import { SettingsStore } from '../../core/settings-store';
 import { Icon } from '../ui/icon';
 import { MegaMenu } from './mega-menu';
+import { orderNav } from './nav-split';
 import { SearchBox } from './search-box';
 
 const SCROLL_SHRINK_PX = 24;
@@ -121,7 +122,7 @@ const SCROLL_SHRINK_PX = 24;
             </button>
           </div>
           <ul class="divide-y">
-            @for (top of tree(); track top.id) {
+            @for (top of navTree(); track top.id) {
               <li class="py-1">
                 <div class="flex items-center justify-between">
                   <a
@@ -216,6 +217,8 @@ export class Header {
     this.api.categoryTree().pipe(catchError(() => of<CategoryNode[]>([]))),
     { initialValue: [] as CategoryNode[] },
   );
+
+  protected readonly navTree = computed(() => orderNav(this.tree()));
 
   @HostListener('window:scroll')
   protected onScroll(): void {
