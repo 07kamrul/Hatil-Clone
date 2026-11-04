@@ -1,10 +1,20 @@
 import {
-  ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, effect, inject, viewChild,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  computed,
+  effect,
+  inject,
+  viewChild,
 } from '@angular/core';
 
 import { Dialog, type DialogKind } from '../../core/dialog';
 
-const KIND_STYLES: Record<DialogKind, { ring: string; icon: string; iconColor: string; btn: string }> = {
+const KIND_STYLES: Record<
+  DialogKind,
+  { ring: string; icon: string; iconColor: string; btn: string }
+> = {
   info: { ring: 'bg-blue-100', icon: 'i', iconColor: 'text-blue-600', btn: 'btn-primary' },
   success: { ring: 'bg-green-100', icon: '✓', iconColor: 'text-green-600', btn: 'btn-primary' },
   warning: { ring: 'bg-amber-100', icon: '!', iconColor: 'text-amber-600', btn: 'btn-primary' },
@@ -30,8 +40,11 @@ const KIND_STYLES: Record<DialogKind, { ring: string; icon: string; iconColor: s
           class="w-full rounded-t-2xl bg-white p-5 shadow-xl motion-safe:animate-dialog-panel sm:max-w-sm sm:rounded-2xl"
         >
           <div class="flex items-start gap-3">
-            <div class="flex size-10 shrink-0 items-center justify-center rounded-full text-lg font-bold"
-                 [class]="styles().ring" aria-hidden="true">
+            <div
+              class="flex size-10 shrink-0 items-center justify-center rounded-full text-lg font-bold"
+              [class]="styles().ring"
+              aria-hidden="true"
+            >
               <span [class]="styles().iconColor">{{ styles().icon }}</span>
             </div>
             <div class="min-w-0 flex-1">
@@ -59,7 +72,14 @@ const KIND_STYLES: Record<DialogKind, { ring: string; icon: string; iconColor: s
 
           <div class="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             @if (req.mode !== 'alert') {
-              <button type="button" #cancelBtn class="btn-outline w-full sm:w-auto" (click)="cancel()">Cancel</button>
+              <button
+                type="button"
+                #cancelBtn
+                class="btn-outline w-full sm:w-auto"
+                (click)="cancel()"
+              >
+                Cancel
+              </button>
             }
             <button
               type="button"
@@ -68,7 +88,9 @@ const KIND_STYLES: Record<DialogKind, { ring: string; icon: string; iconColor: s
               [class]="styles().btn"
               [disabled]="req.mode === 'prompt' && !!error()"
               (click)="confirmAction()"
-            >{{ req.confirmLabel }}</button>
+            >
+              {{ req.confirmLabel }}
+            </button>
           </div>
         </div>
       </div>
@@ -106,9 +128,11 @@ export class DialogHost {
       setTimeout(() => {
         if (!this.dialog.state()) return;
         const target =
-          req.mode === 'prompt' ? this.promptInput()?.nativeElement
-          : req.kind === 'danger' ? this.cancelBtn()?.nativeElement
-          : this.confirmBtn()?.nativeElement;
+          req.mode === 'prompt'
+            ? this.promptInput()?.nativeElement
+            : req.kind === 'danger'
+              ? this.cancelBtn()?.nativeElement
+              : this.confirmBtn()?.nativeElement;
         target?.focus();
         if (target instanceof HTMLInputElement) target.select();
       });

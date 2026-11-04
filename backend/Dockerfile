@@ -9,11 +9,14 @@ WORKDIR /app
 # Keep PG_MAJOR >= the server's major (override with --build-arg PG_MAJOR=<n>); the script re-checks
 # `SHOW server_version` at runtime and logs the mismatch.
 ARG PG_MAJOR=18
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl gnupg \
-    && install -d /usr/share/keyrings \
-    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/pgdg.gpg \
+# PGDG signing key is vendored (fingerprint B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8) so the build
+# doesn't depend on www.postgresql.org. If PGDG rotates it, replace docker/pgdg.asc from
+# https://www.postgresql.org/media/keys/ACCC4CF8.asc and re-check the fingerprint.
+COPY docker/pgdg.asc /usr/share/keyrings/pgdg.asc
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80retries \
+    && apt-get update && apt-get install -y --no-install-recommends ca-certificates \
     && . /etc/os-release \
-    && echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && echo "deb [signed-by=/usr/share/keyrings/pgdg.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && apt-get update && apt-get install -y --no-install-recommends \
       libjpeg62-turbo libwebp7 "postgresql-client-${PG_MAJOR}" util-linux \
     && rm -rf /var/lib/apt/lists/*
