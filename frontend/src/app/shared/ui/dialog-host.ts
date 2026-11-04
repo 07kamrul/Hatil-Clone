@@ -37,8 +37,9 @@ const KIND_STYLES: Record<
           aria-modal="true"
           [attr.aria-label]="req.title"
           (keydown)="onKeydown($event)"
-          class="w-full rounded-t-2xl bg-white p-5 shadow-xl motion-safe:animate-dialog-panel sm:max-w-sm sm:rounded-2xl"
+          class="max-h-[90dvh] w-full overflow-y-auto overscroll-contain rounded-t-2xl bg-white p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl motion-safe:animate-dialog-panel sm:max-w-sm sm:rounded-2xl"
         >
+          <div class="mx-auto -mt-2 mb-3 h-1 w-10 rounded-full bg-gray-300 sm:hidden" aria-hidden="true"></div>
           <div class="flex items-start gap-3">
             <div
               class="flex size-10 shrink-0 items-center justify-center rounded-full text-lg font-bold"
@@ -59,7 +60,7 @@ const KIND_STYLES: Record<
             <input
               #promptInput
               type="text"
-              class="mt-4 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              class="input mt-4"
               [attr.placeholder]="req.placeholder || ''"
               [value]="req.value"
               (input)="onInput(promptInput.value)"

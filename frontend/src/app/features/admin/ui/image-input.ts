@@ -9,17 +9,17 @@ import { AdminApi, apiError } from '../core/admin-api';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => ImageInput), multi: true }],
   template: `
-    <div class="flex items-start gap-3">
-      <div class="flex h-24 w-32 shrink-0 items-center justify-center overflow-hidden rounded border bg-gray-50">
+    <div class="flex min-w-0 flex-wrap items-start gap-3">
+      <div class="flex aspect-[4/3] w-full max-w-40 shrink-0 sm:h-24 sm:w-32 sm:aspect-auto items-center justify-center overflow-hidden rounded border bg-gray-50">
         @if (value()) { <img [src]="value()" alt="" class="h-full w-full object-cover" /> } @else { <span class="text-xs text-gray-400">No image</span> }
       </div>
-      <div class="space-y-2 text-sm">
+      <div class="flex min-w-0 flex-col items-start gap-2 text-sm">
         <label class="btn-outline cursor-pointer">
           {{ uploading() ? 'Uploading…' : value() ? 'Replace' : 'Upload' }}
           <input type="file" accept="image/*" class="hidden" [disabled]="uploading()" (change)="upload($event)" />
         </label>
-        @if (value()) { <button type="button" class="block text-red-600 hover:underline" (click)="set(null)">Remove</button> }
-        @if (error()) { <p class="text-xs text-red-600">{{ error() }}</p> }
+        @if (value()) { <button type="button" class="inline-flex min-h-11 items-center rounded-md px-2 text-red-600 hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:outline-none" (click)="set(null)">Remove</button> }
+        @if (error()) { <p class="text-xs text-red-600" role="alert">{{ error() }}</p> }
       </div>
     </div>
   `,

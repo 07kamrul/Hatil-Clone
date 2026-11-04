@@ -41,11 +41,10 @@ const COLLAPSE_KEY = 'admin.sidebar-collapsed';
     <div class="min-h-screen bg-gray-100 lg:flex">
       <aside
         id="admin-sidebar"
-        class="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-gray-900 text-gray-300 shadow-xl transition-transform duration-200 lg:sticky lg:w-64 lg:max-w-none lg:shadow-none lg:top-0 lg:z-auto lg:h-screen lg:translate-x-0"
+        class="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-gray-900 text-gray-300 shadow-xl transition-[transform,visibility] duration-200 lg:visible lg:sticky lg:w-64 lg:max-w-none lg:shadow-none lg:top-0 lg:z-auto lg:h-screen lg:translate-x-0"
         [class.-translate-x-full]="!open()"
         [class.lg:w-16]="collapsed()"
         [class.invisible]="!open()"
-        [class.lg:visible]="true"
         aria-label="Admin navigation"
       >
         <div class="flex items-center gap-2 px-4 py-4" [class.lg:justify-center]="collapsed()" [class.lg:px-2]="collapsed()">

@@ -1,6 +1,7 @@
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
+  HostListener,
   Component,
   computed,
   effect,
@@ -33,8 +34,8 @@ export function wrapIndex(current: number, delta: number, count: number): number
       <app-breadcrumbs
         [crumbs]="[{ label: 'Inspiration', link: ['/blog'] }, { label: d.post.title }]"
       />
-      <article class="container-x max-w-3xl pb-10">
-        <h1 class="text-3xl font-bold leading-tight">{{ d.post.title }}</h1>
+      <article class="container-x max-w-3xl pb-12">
+        <h1 class="h-1 leading-tight break-words">{{ d.post.title }}</h1>
         <p class="mt-2 text-sm text-gray-500">
           {{ d.post.published_at | date: 'longDate' }}
           @if (d.post.author) {
@@ -48,12 +49,12 @@ export function wrapIndex(current: number, delta: number, count: number): number
               [alt]="d.post.title"
               fill
               priority
-              sizes="(min-width:768px) 768px, 100vw"
+              sizes="(min-width:768px) 60vw, 100vw"
               class="object-cover"
             />
           </div>
         }
-        <div class="prose-content mt-6" [innerHTML]="d.post.body_html"></div>
+        <div class="prose-content mt-6 max-w-prose break-words [&_img]:h-auto [&_img]:max-w-full [&_iframe]:max-w-full [&_table]:block [&_table]:overflow-x-auto" [innerHTML]="d.post.body_html"></div>
         @if (gallery().length) {
           <section class="mt-6" aria-label="Post photos">
             <h2 class="mb-3 text-lg font-semibold">Photos</h2>
@@ -62,14 +63,14 @@ export function wrapIndex(current: number, delta: number, count: number): number
                 <button
                   type="button"
                   (click)="lightbox.set($index)"
-                  class="group relative aspect-[4/3] overflow-hidden rounded-lg bg-gray-200"
+                  class="group relative aspect-[4/3] overflow-hidden rounded-lg bg-gray-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                   [attr.aria-label]="'Open photo ' + ($index + 1)"
                 >
                   <img
                     [ngSrc]="img"
                     [alt]="d.post.title + ' photo ' + ($index + 1)"
                     fill
-                    sizes="(min-width:768px) 250px, 50vw"
+                    sizes="(min-width:768px) 25vw, 50vw"
                     class="object-cover transition-transform group-hover:scale-105"
                   />
                 </button>
@@ -88,7 +89,7 @@ export function wrapIndex(current: number, delta: number, count: number): number
         >
           <button
             type="button"
-            class="absolute top-4 right-4 text-3xl leading-none text-white"
+            class="icon-btn absolute top-3 right-3 h-11 w-11 text-3xl leading-none text-white hover:bg-white/10"
             (click)="lightbox.set(null)"
             aria-label="Close"
           >
@@ -97,7 +98,7 @@ export function wrapIndex(current: number, delta: number, count: number): number
           @if (gallery().length > 1) {
             <button
               type="button"
-              class="absolute left-4 text-4xl text-white"
+              class="icon-btn absolute left-2 h-11 w-11 text-4xl text-white hover:bg-white/10 sm:left-4"
               (click)="step(-1, $event)"
               aria-label="Previous photo"
             >
@@ -105,7 +106,7 @@ export function wrapIndex(current: number, delta: number, count: number): number
             </button>
             <button
               type="button"
-              class="absolute right-4 text-4xl text-white"
+              class="icon-btn absolute right-2 h-11 w-11 text-4xl text-white hover:bg-white/10 sm:right-4"
               (click)="step(1, $event)"
               aria-label="Next photo"
             >
@@ -124,18 +125,18 @@ export function wrapIndex(current: number, delta: number, count: number): number
         </div>
       }
       @if (d.related.length) {
-        <section class="container-x max-w-5xl pb-10">
-          <h2 class="mb-4 text-xl font-bold">More inspiration</h2>
-          <div class="grid gap-6 sm:grid-cols-3">
+        <section class="container-x max-w-5xl border-t border-gray-200 pt-10 pb-12">
+          <h2 class="h-3 mb-4">More inspiration</h2>
+          <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             @for (r of d.related; track r.id) {
-              <a [routerLink]="['/blog', r.slug]" class="group block">
+              <a [routerLink]="['/blog', r.slug]" class="group block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
                 <div class="relative aspect-[16/10] overflow-hidden rounded-lg bg-gray-200">
                   @if (r.cover_image) {
                     <img
                       [ngSrc]="r.cover_image"
                       [alt]="r.title"
                       fill
-                      sizes="(min-width:640px) 33vw, 100vw"
+                      sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
                       class="object-cover"
                     />
                   }
@@ -146,9 +147,18 @@ export function wrapIndex(current: number, delta: number, count: number): number
           </div>
         </section>
       }
-    } @else if (!data.isLoading()) {
-      <div class="container-x py-24 text-center">
-        <h1 class="text-2xl font-bold">Post not found</h1>
+    } @else if (data.isLoading()) {
+      <div class="container-x max-w-3xl py-8" aria-busy="true" aria-label="Loading post">
+        <div class="skeleton h-9 w-3/4"></div>
+        <div class="skeleton mt-3 h-4 w-40"></div>
+        <div class="skeleton mt-6 aspect-[16/9] rounded-lg"></div>
+        <div class="skeleton mt-6 h-4 w-full"></div>
+        <div class="skeleton mt-2 h-4 w-5/6"></div>
+      </div>
+    } @else {
+      <div class="container-x empty-state my-16">
+        <h1 class="h-2">Post not found</h1>
+        <p class="text-muted mt-2">It may have been moved or unpublished.</p>
         <a routerLink="/blog" class="btn-primary mt-6">Back to blog</a>
       </div>
     }
@@ -176,6 +186,14 @@ export class BlogDetail {
 
   protected readonly gallery = computed(() => this.data.value()?.post.gallery ?? []);
   protected readonly lightbox = signal<number | null>(null);
+
+  @HostListener('document:keydown', ['$event'])
+  protected onKey(event: KeyboardEvent): void {
+    if (this.lightbox() === null) return;
+    if (event.key === 'Escape') this.lightbox.set(null);
+    else if (event.key === 'ArrowLeft') this.step(-1, event);
+    else if (event.key === 'ArrowRight') this.step(1, event);
+  }
 
   protected step(delta: number, event: Event): void {
     event.stopPropagation();

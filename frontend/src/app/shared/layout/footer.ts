@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
@@ -36,10 +43,10 @@ const MORE_INFO: readonly FooterLink[] = [
   imports: [RouterLink, Icon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <footer class="mt-20 bg-[#141414] text-neutral-400">
+    <footer class="mt-16 bg-[#141414] text-neutral-400 sm:mt-20">
       <div class="h-0.5 bg-gradient-to-r from-transparent via-brand to-transparent"></div>
       <div
-        class="mx-auto grid max-w-7xl gap-10 px-6 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:px-8"
+        class="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:gap-10 lg:px-8"
       >
         <div>
           <a routerLink="/" class="text-2xl font-semibold tracking-tight text-white">{{
@@ -97,7 +104,7 @@ const MORE_INFO: readonly FooterLink[] = [
                   target="_blank"
                   rel="noopener noreferrer"
                   [attr.aria-label]="so.label"
-                  class="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-700 transition hover:border-brand hover:bg-brand hover:text-white"
+                  class="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-700 transition hover:border-brand hover:bg-brand hover:text-white"
                 >
                   <app-icon [name]="so.icon" [size]="16"
                 /></a>
@@ -106,9 +113,10 @@ const MORE_INFO: readonly FooterLink[] = [
           }
         </div>
 
-        <nav aria-label="The company">
-          <h2 class="footer-title">The Company</h2>
-          <ul class="space-y-3 text-sm">
+        <nav aria-label="The company" class="border-t border-neutral-800 pt-2 lg:border-0 lg:pt-0">
+          <details class="group" [open]="isDesktop()">
+          <summary class="footer-title">The Company<app-icon name="chevronDown" [size]="18" class="transition-transform group-open:rotate-180 lg:hidden" /></summary>
+          <ul class="space-y-1 pb-3 text-sm lg:space-y-3">
             <li><a routerLink="/" class="footer-link">Return Home</a></li>
             @for (p of pages(); track p.slug) {
               <li>
@@ -116,32 +124,37 @@ const MORE_INFO: readonly FooterLink[] = [
               </li>
             }
           </ul>
+          </details>
         </nav>
-        <nav aria-label="Need help">
-          <h2 class="footer-title">Need Help?</h2>
-          <ul class="space-y-3 text-sm">
+        <nav aria-label="Need help" class="border-t border-neutral-800 pt-2 lg:border-0 lg:pt-0">
+          <details class="group" [open]="isDesktop()">
+          <summary class="footer-title">Need Help?<app-icon name="chevronDown" [size]="18" class="transition-transform group-open:rotate-180 lg:hidden" /></summary>
+          <ul class="space-y-1 pb-3 text-sm lg:space-y-3">
             @for (l of needHelp; track l.path) {
               <li>
                 <a [routerLink]="l.path" class="footer-link">{{ l.label }}</a>
               </li>
             }
           </ul>
+          </details>
         </nav>
-        <nav aria-label="More information">
-          <h2 class="footer-title">More Information</h2>
-          <ul class="space-y-3 text-sm">
+        <nav aria-label="More information" class="border-t border-neutral-800 pt-2 lg:border-0 lg:pt-0">
+          <details class="group" [open]="isDesktop()">
+          <summary class="footer-title">More Information<app-icon name="chevronDown" [size]="18" class="transition-transform group-open:rotate-180 lg:hidden" /></summary>
+          <ul class="space-y-1 pb-3 text-sm lg:space-y-3">
             @for (l of moreInfo; track l.path) {
               <li>
                 <a [routerLink]="l.path" class="footer-link">{{ l.label }}</a>
               </li>
             }
           </ul>
+          </details>
           @if (s().whatsapp_number) {
             <a
               [href]="settings.whatsappLink()"
               target="_blank"
               rel="noopener noreferrer"
-              class="mt-6 inline-flex items-center gap-2 rounded-full border border-brand px-5 py-2 text-sm font-medium text-white transition hover:bg-brand"
+              class="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-brand px-5 py-2 text-sm font-medium text-white transition hover:bg-brand"
             >
               <app-icon name="whatsapp" [size]="16" /> Order on WhatsApp</a
             >
@@ -157,18 +170,47 @@ const MORE_INFO: readonly FooterLink[] = [
   `,
   styles: `
     .footer-title {
-      margin-bottom: 1.25rem;
+      display: flex;
+      min-height: 2.75rem;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      list-style: none;
       font-size: 0.8rem;
       font-weight: 600;
       letter-spacing: 0.18em;
       text-transform: uppercase;
       color: #fff;
     }
+    .footer-title::-webkit-details-marker {
+      display: none;
+    }
+    @media (min-width: 64rem) {
+      .footer-title {
+        min-height: 0;
+        margin-bottom: 1.25rem;
+        cursor: default;
+        pointer-events: none;
+      }
+    }
     .footer-link {
       position: relative;
+      display: inline-flex;
+      min-height: 2.75rem;
+      align-items: center;
       transition:
         color 0.15s,
         padding 0.15s;
+    }
+    @media (min-width: 64rem) {
+      .footer-link {
+        min-height: 0;
+      }
+    }
+    .footer-link:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
+      color: #fff;
     }
     .footer-link:hover {
       color: #fff;
@@ -180,6 +222,16 @@ export class Footer {
   protected readonly settings = inject(SettingsStore);
   protected readonly s = this.settings.settings;
   protected readonly year = new Date().getFullYear();
+  /** Columns render collapsed (mobile accordion) until the browser confirms a desktop viewport. */
+  protected readonly isDesktop = signal(false);
+
+  constructor() {
+    afterNextRender(() => {
+      const mq = window.matchMedia('(min-width: 64rem)');
+      this.isDesktop.set(mq.matches);
+      mq.addEventListener('change', (e) => this.isDesktop.set(e.matches));
+    });
+  }
   protected readonly needHelp = NEED_HELP;
   protected readonly moreInfo = MORE_INFO;
   protected readonly pages = toSignal(

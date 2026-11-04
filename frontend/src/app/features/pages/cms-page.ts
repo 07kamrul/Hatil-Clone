@@ -17,11 +17,20 @@ import { Breadcrumbs } from '../../shared/ui/breadcrumbs';
     @if (page.value(); as p) {
       <app-breadcrumbs [crumbs]="[{ label: p.title }]" />
       <article class="container-x max-w-3xl pb-12">
-        <h1 class="mb-6 text-3xl font-bold">{{ p.title }}</h1>
-        <div class="prose-content" [innerHTML]="p.body_html"></div>
+        <h1 class="h-1 mb-6 break-words">{{ p.title }}</h1>
+        <div class="prose-content max-w-prose break-words [&_img]:h-auto [&_img]:max-w-full [&_iframe]:max-w-full [&_table]:block [&_table]:overflow-x-auto" [innerHTML]="p.body_html"></div>
       </article>
-    } @else if (!page.isLoading()) {
-      <div class="container-x py-24 text-center"><h1 class="text-2xl font-bold">Page not found</h1><a routerLink="/" class="btn-primary mt-6">Go home</a></div>
+    } @else if (page.isLoading()) {
+      <div class="container-x max-w-3xl py-8" aria-busy="true" aria-label="Loading page">
+        <div class="skeleton h-9 w-1/2"></div>
+        @for (n of [1, 2, 3, 4]; track n) { <div class="skeleton mt-4 h-4 w-full"></div> }
+      </div>
+    } @else {
+      <div class="container-x empty-state my-16">
+        <h1 class="h-2">Page not found</h1>
+        <p class="text-muted mt-2">This page doesn't exist or has moved.</p>
+        <a routerLink="/" class="btn-primary mt-6">Go home</a>
+      </div>
     }
   `,
 })
