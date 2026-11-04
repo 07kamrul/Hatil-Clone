@@ -27,20 +27,20 @@ const TOOLBAR: ToolbarButton[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => HtmlEditor), multi: true }],
   template: `
-    <div class="rounded-md border border-gray-300 focus-within:border-brand">
+    <div class="min-w-0 max-w-full overflow-hidden rounded-md border border-gray-300 focus-within:border-brand">
       <div class="flex flex-wrap gap-1 border-b bg-gray-50 p-1" role="toolbar" aria-label="Formatting">
         @for (b of toolbar; track b.label) {
-          <button type="button" class="rounded px-2 py-1 text-xs font-semibold hover:bg-gray-200" [title]="b.title"
+          <button type="button" class="inline-flex min-h-10 min-w-10 items-center justify-center rounded px-2 text-xs font-semibold hover:bg-gray-200 focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none" [title]="b.title"
                   [disabled]="source()" (mousedown)="$event.preventDefault()" (click)="exec(b)">{{ b.label }}</button>
         }
-        <button type="button" class="rounded px-2 py-1 text-xs font-semibold hover:bg-gray-200" title="Link" [disabled]="source()"
+        <button type="button" class="inline-flex min-h-10 min-w-10 items-center justify-center rounded px-2 text-xs font-semibold hover:bg-gray-200 focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none" title="Link" [disabled]="source()"
                 (mousedown)="$event.preventDefault()" (click)="link()">Link</button>
-        <button type="button" class="ml-auto rounded px-2 py-1 text-xs hover:bg-gray-200" (click)="toggleSource()">{{ source() ? 'Visual' : 'HTML' }}</button>
+        <button type="button" class="ml-auto inline-flex min-h-10 items-center rounded px-3 text-xs hover:bg-gray-200 focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none" (click)="toggleSource()">{{ source() ? 'Visual' : 'HTML' }}</button>
       </div>
       @if (source()) {
         <textarea class="block min-h-48 w-full p-3 font-mono text-xs focus:outline-none" [ngModel]="html()" (ngModelChange)="setFromSource($event)" (blur)="touched()"></textarea>
       } @else {
-        <div #editable contenteditable="true" class="prose-content min-h-48 p-3 text-sm focus:outline-none" (input)="onInput()" (blur)="touched()"></div>
+        <div #editable contenteditable="true" class="prose-content min-h-48 overflow-x-auto break-words p-3 text-sm focus:outline-none [&_img]:max-w-full [&_table]:block [&_table]:overflow-x-auto" (input)="onInput()" (blur)="touched()"></div>
       }
     </div>
   `,

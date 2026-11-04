@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Toast } from '../../../core/toast';
 import { AdminApi, Row, apiError } from '../core/admin-api';
 import { HtmlEditor } from '../ui/html-editor';
+import { FormActions } from '../ui/form-actions';
 import { ImageInput } from '../ui/image-input';
 import { DEFAULTS, FieldDef, RESOURCES } from './resource-config';
 
@@ -23,20 +24,25 @@ export function fromLocalInput(value: unknown): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
+/** Field types that span both columns of the md+ grid. */
+const WIDE_TYPES = new Set(['textarea', 'html', 'image']);
+
 @Component({
   selector: 'app-resource-form',
-  imports: [FormsModule, RouterLink, HtmlEditor, ImageInput],
+  imports: [FormsModule, RouterLink, HtmlEditor, ImageInput, FormActions],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <a [routerLink]="['..']" class="text-sm text-gray-600 hover:underline">← Back to {{ def().title }}</a>
-    <h1 class="mb-5 mt-2 text-2xl font-bold">{{ isNew() ? 'New ' + def().singular : 'Edit ' + def().singular }}</h1>
-    @if (loading()) { <p class="text-gray-500">Loading…</p> }
+    <a [routerLink]="['..']" class="inline-flex min-h-11 items-center text-sm text-gray-600 hover:underline">← Back to {{ def().title }}</a>
+    <h1 class="mb-5 break-words text-2xl font-bold">{{ isNew() ? 'New ' + def().singular : 'Edit ' + def().singular }}</h1>
+    @if (loading()) {
+      <div class="card max-w-3xl space-y-4 p-6" aria-busy="true" aria-label="Loading">@for (k of [1, 2, 3, 4]; track k) { <div class="space-y-2"><div class="skeleton h-3 w-24"></div><div class="skeleton h-11 w-full"></div></div> }</div>
+    }
     @else {
-      <form class="card max-w-3xl space-y-4 p-6" (submit)="save($event)">
+      <form class="card grid max-w-4xl gap-4 p-4 sm:p-6 md:grid-cols-2" (submit)="save($event)">
         @for (f of def().fields; track f.key) {
-          <div>
+          <div class="min-w-0" [class.md:col-span-2]="isWide(f.type)">
             @if (f.type === 'checkbox') {
-              <label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" [name]="f.key" [(ngModel)]="model[f.key]" /> {{ f.label }}</label>
+              <label class="flex min-h-11 items-center gap-2 text-sm font-medium"><input type="checkbox" class="h-5 w-5" [name]="f.key" [(ngModel)]="model[f.key]" /> {{ f.label }}</label>
             } @else {
               <label class="label" [for]="'f-' + f.key">{{ f.label }}@if (f.required) { <span class="text-red-600">*</span> }</label>
               @switch (f.type) {
@@ -50,23 +56,27 @@ export function fromLocalInput(value: unknown): string | null {
                 }
                 @case ('image') { <app-image-input [name]="f.key" [folder]="f.folder || 'misc'" [(ngModel)]="model[f.key]" /> }
                 @case ('datetime') { <input [id]="'f-' + f.key" type="datetime-local" [name]="f.key" class="input" [(ngModel)]="model[f.key]" /> }
-                @case ('color') { <input [id]="'f-' + f.key" type="color" [name]="f.key" class="h-10 w-20 rounded border" [(ngModel)]="model[f.key]" /> }
+                @case ('color') { <input [id]="'f-' + f.key" type="color" [name]="f.key" class="h-11 w-20 rounded border" [(ngModel)]="model[f.key]" /> }
                 @default { <input [id]="'f-' + f.key" type="text" [name]="f.key" class="input" [(ngModel)]="model[f.key]" [required]="!!f.required" /> }
               }
             }
             @if (f.help) { <p class="mt-1 text-xs text-gray-500">{{ f.help }}</p> }
           </div>
         }
-        @if (error()) { <p class="rounded bg-red-50 p-3 text-sm text-red-700" role="alert">{{ error() }}</p> }
-        <div class="flex gap-3">
+        @if (error()) { <p class="rounded bg-red-50 p-3 text-sm text-red-700 md:col-span-2" role="alert">{{ error() }}</p> }
+        <app-form-actions class="md:col-span-2">
           <button type="submit" class="btn-primary" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save' }}</button>
           <a [routerLink]="['..']" class="btn-outline">Cancel</a>
-        </div>
+        </app-form-actions>
       </form>
     }
   `,
 })
 export class ResourceForm {
+  protected isWide(type: string): boolean {
+    return WIDE_TYPES.has(type);
+  }
+
   readonly resource = input.required<string>();
   /** Route param: numeric id or "new". */
   readonly id = input<string>('new');

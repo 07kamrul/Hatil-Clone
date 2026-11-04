@@ -8,7 +8,9 @@ import { Dialog } from '../../../core/dialog';
 import { Toast } from '../../../core/toast';
 import { AdminApi, apiError } from '../core/admin-api';
 import { HtmlEditor } from '../ui/html-editor';
+import { FormActions } from '../ui/form-actions';
 import { ImageInput } from '../ui/image-input';
+import { PageHeader } from '../ui/page-header';
 
 interface CategoryForm {
   id: number | null; name: string; slug: string; parent_id: number | null; description_html: string; image: string | null;
@@ -30,22 +32,22 @@ export function flattenTree(nodes: CategoryNode[], exclude: number | null, depth
 
 @Component({
   selector: 'app-admin-categories',
-  imports: [FormsModule, NgTemplateOutlet, HtmlEditor, ImageInput],
+  imports: [FormsModule, NgTemplateOutlet, HtmlEditor, ImageInput, FormActions, PageHeader],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="mb-5 flex items-center justify-between">
-      <h1 class="text-2xl font-bold">Categories</h1>
-      <button type="button" class="btn-primary" (click)="edit(null)">+ New category</button>
-    </div>
-    <div class="grid gap-6 xl:grid-cols-[1fr_32rem]">
-      <section class="card p-4">
+    <app-page-header title="Categories" subtitle="Organise rooms, categories and subcategories.">
+      <button actions type="button" class="btn-primary w-full sm:w-auto" (click)="edit(null)">+ New category</button>
+    </app-page-header>
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_32rem]">
+      <section class="card min-w-0 p-4">
         <p class="mb-3 text-xs text-gray-500">Top level = room/department → category → subcategory. Counts include published products in subcategories.</p>
         <ul class="text-sm"><ng-container [ngTemplateOutlet]="branch" [ngTemplateOutletContext]="{ nodes: tree.value() ?? [] }" /></ul>
-        @if (!tree.value()?.length && !tree.isLoading()) { <p class="text-gray-500">No categories yet.</p> }
+        @if (tree.isLoading() && !tree.value()) { <div class="space-y-2" aria-busy="true">@for (k of [1, 2, 3, 4, 5]; track k) { <div class="skeleton h-8 w-full"></div> }</div> }
+        @if (!tree.value()?.length && !tree.isLoading()) { <div class="empty-state"><p>No categories yet.</p><button type="button" class="btn-primary" (click)="edit(null)">+ New category</button></div> }
       </section>
 
       @if (form(); as f) {
-        <form class="card h-fit space-y-3 p-5" (submit)="save($event)">
+        <form class="card h-fit min-w-0 space-y-3 p-4 sm:p-5 xl:sticky xl:top-20" (submit)="save($event)">
           <h2 class="font-semibold">{{ f.id ? 'Edit category' : 'New category' }}</h2>
           <div><label class="label" for="c-name">Name *</label><input id="c-name" name="name" class="input" required [(ngModel)]="f.name" /></div>
           <div class="grid gap-3 sm:grid-cols-2">
@@ -54,10 +56,10 @@ export function flattenTree(nodes: CategoryNode[], exclude: number | null, depth
           </div>
           <div><label class="label" for="c-parent">Parent</label><select id="c-parent" name="parent_id" class="input" [(ngModel)]="f.parent_id">
             <option [ngValue]="null">— top level —</option>@for (o of parentOptions(); track o.id) { <option [ngValue]="o.id">{{ o.label }}</option> }</select></div>
-          <div class="flex flex-wrap gap-4 text-sm">
-            <label class="flex items-center gap-1"><input type="checkbox" name="is_active" [(ngModel)]="f.is_active" /> Active</label>
-            <label class="flex items-center gap-1"><input type="checkbox" name="show_in_menu" [(ngModel)]="f.show_in_menu" /> In menu</label>
-            <label class="flex items-center gap-1"><input type="checkbox" name="is_featured" [(ngModel)]="f.is_featured" /> Featured on home</label>
+          <div class="flex flex-wrap gap-x-4 text-sm">
+            <label class="flex min-h-11 items-center gap-1"><input type="checkbox" name="is_active" [(ngModel)]="f.is_active" /> Active</label>
+            <label class="flex min-h-11 items-center gap-1"><input type="checkbox" name="show_in_menu" [(ngModel)]="f.show_in_menu" /> In menu</label>
+            <label class="flex min-h-11 items-center gap-1"><input type="checkbox" name="is_featured" [(ngModel)]="f.is_featured" /> Featured on home</label>
           </div>
           <div><span class="label">Thumbnail</span><app-image-input name="image" folder="categories" [(ngModel)]="f.image" /></div>
           <div><span class="label">Banner</span><app-image-input name="banner_image" folder="categories" [(ngModel)]="f.banner_image" /></div>
@@ -66,11 +68,11 @@ export function flattenTree(nodes: CategoryNode[], exclude: number | null, depth
           <div><label class="label" for="c-sd">SEO description</label><textarea id="c-sd" name="seo_description" rows="2" class="input" [(ngModel)]="f.seo_description"></textarea></div>
           <div><label class="label" for="c-sk">SEO keywords</label><input id="c-sk" name="seo_keywords" class="input" [(ngModel)]="f.seo_keywords" /></div>
           @if (error()) { <p class="rounded bg-red-50 p-2 text-sm text-red-700" role="alert">{{ error() }}</p> }
-          <div class="flex gap-2">
+          <app-form-actions>
             <button type="submit" class="btn-primary" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save' }}</button>
             <button type="button" class="btn-outline" (click)="form.set(null)">Cancel</button>
-            @if (f.id) { <button type="button" class="btn-danger ml-auto" (click)="remove(f.id)">Delete</button> }
-          </div>
+            @if (f.id) { <button type="button" class="btn-danger md:ml-auto" (click)="remove(f.id)">Delete</button> }
+          </app-form-actions>
         </form>
       }
     </div>

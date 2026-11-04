@@ -66,7 +66,7 @@ const MORE_ID = -1;
       @for (top of tree(); track top.id) {
         @if (active() === top.id && top.children.length) {
           <div class="absolute inset-x-0 top-full z-40 border-t bg-white shadow-xl">
-            <div class="container-x grid grid-cols-2 gap-8 py-8 lg:grid-cols-5">
+            <div class="container-x grid max-h-[70vh] grid-cols-3 gap-8 overflow-y-auto py-8 xl:grid-cols-5">
               @for (cat of top.children; track cat.id) {
                 <div>
                   <a
@@ -107,6 +107,11 @@ const MORE_ID = -1;
       transition:
         color 0.15s,
         line-height 0.2s;
+    }
+    .nav-link:focus-visible,
+    .more-link:focus-visible {
+      outline: 2px solid var(--color-brand);
+      outline-offset: -2px;
     }
     .nav-link:hover,
     .nav-link.is-active {

@@ -55,7 +55,7 @@ const clampZoom = (v: number | null | undefined): number =>
     </div>
 
     <!-- Map -->
-    <div class="relative mt-3 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
+    <div class="relative mt-3 w-full min-w-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
       <div #host class="h-56 w-full cursor-crosshair md:h-80" role="application" tabindex="0"
            aria-label="Shop location map — click to move the pin"></div>
       @if (loading()) {
@@ -86,7 +86,7 @@ const clampZoom = (v: number | null | undefined): number =>
     <!-- Current point summary -->
     @if (hasPoint()) {
       <div class="mt-1 flex flex-wrap items-center gap-2 rounded-lg bg-gray-50 px-3 py-2">
-        <code class="text-xs text-gray-700">📍 {{ pointLabel() }}</code>
+        <code class="min-w-0 break-all text-xs text-gray-700">📍 {{ pointLabel() }}</code>
         <span class="ml-auto flex gap-2">
           <button type="button" class="text-xs font-medium text-gray-600 underline hover:text-gray-900" (click)="copyPoint()">
             {{ copied() ? 'Copied!' : 'Copy' }}
@@ -99,7 +99,7 @@ const clampZoom = (v: number | null | undefined): number =>
 
     <!-- Manual coordinates -->
     <div class="mt-3">
-      <button type="button" class="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-gray-900"
+      <button type="button" class="flex min-h-11 items-center gap-1 text-sm font-medium text-gray-700 hover:text-gray-900"
               (click)="showManual.set(!showManual())" [attr.aria-expanded]="showManual()">
         <span class="inline-block transition-transform" [class.rotate-90]="showManual()">▸</span>
         Enter coordinates manually

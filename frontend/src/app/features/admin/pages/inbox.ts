@@ -23,14 +23,14 @@ interface ContactMessage { id: number; name: string; email: string | null; phone
   template: `
     <app-page-header title="Order inquiries" subtitle="Anonymous log of WhatsApp checkouts for analytics. Orders themselves are handled in WhatsApp." />
     <div class="mb-3 flex flex-wrap gap-2">
-      <select class="input !w-auto" [ngModel]="status()" (ngModelChange)="status.set($event); page.set(1)" aria-label="Status">
+      <select class="input min-w-0 flex-1 sm:!w-auto sm:flex-none" [ngModel]="status()" (ngModelChange)="status.set($event); page.set(1)" aria-label="Status">
         <option value="">All statuses</option><option value="new">New</option><option value="contacted">Contacted</option><option value="closed">Closed</option>
       </select>
-      <input type="search" class="input max-w-xs" placeholder="Search name, phone, address…" [ngModel]="q()" (ngModelChange)="q.set($event); page.set(1)" aria-label="Search" />
+      <input type="search" class="input w-full sm:max-w-xs" placeholder="Search name, phone, address…" [ngModel]="q()" (ngModelChange)="q.set($event); page.set(1)" aria-label="Search" />
     </div>
     <div class="space-y-3">
       @for (i of rows.value()?.items; track i.id) {
-        <article class="card p-4 text-sm">
+        <article class="card min-w-0 p-4 text-sm">
           <div class="flex flex-wrap items-center gap-3">
             <strong>#{{ i.id }}</strong>
             <span class="text-gray-500">{{ i.created_at | date: 'medium' }}</span>
@@ -40,11 +40,11 @@ interface ContactMessage { id: number; name: string; email: string | null; phone
               @case ('contacted') { <app-badge tone="amber">Contacted</app-badge> }
               @case ('closed') { <app-badge tone="gray">Closed</app-badge> }
             }
-            <span class="ml-auto font-semibold">{{ i.total | money }}</span>
-            <select class="input !w-auto !py-1" [ngModel]="i.status" (ngModelChange)="setStatus(i.id, $event)" [attr.aria-label]="'Status of inquiry ' + i.id">
+            <span class="font-semibold sm:ml-auto">{{ i.total | money }}</span>
+            <select class="input !w-auto" [ngModel]="i.status" (ngModelChange)="setStatus(i.id, $event)" [attr.aria-label]="'Status of inquiry ' + i.id">
               <option value="new">New</option><option value="contacted">Contacted</option><option value="closed">Closed</option>
             </select>
-            <button type="button" class="text-red-600 hover:underline" (click)="remove(i.id)">Delete</button>
+            <button type="button" class="inline-flex min-h-11 items-center rounded-md px-3 text-red-600 hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:outline-none" (click)="remove(i.id)">Delete</button>
           </div>
           @if (i.customer_name || i.phone || i.address) {
             <p class="mt-2 text-gray-700">{{ i.customer_name || '—' }} · {{ i.phone || 'no phone' }} · {{ i.address || 'no address' }}</p>
@@ -53,17 +53,17 @@ interface ContactMessage { id: number; name: string; email: string | null; phone
           <ul class="mt-2 divide-y rounded border">
             @for (it of i.items; track $index) {
               <li class="flex justify-between gap-2 px-3 py-1.5">
-                <span>@if (it.slug) { <a [href]="'/product/' + it.slug" target="_blank" class="hover:text-brand">{{ it.name }}</a> } @else { {{ it.name }} }
+                <span class="min-w-0 break-words">@if (it.slug) { <a [href]="'/product/' + it.slug" target="_blank" class="hover:text-brand">{{ it.name }}</a> } @else { {{ it.name }} }
                   <span class="text-gray-500">{{ it.sku }}@if (it.variant) { · {{ it.variant }} }</span></span>
                 <span class="whitespace-nowrap">{{ it.quantity }} × {{ it.unit_price | money }}</span>
               </li>
             }
           </ul>
         </article>
-      } @empty { <p class="text-gray-500">{{ rows.isLoading() ? 'Loading…' : 'No inquiries.' }}</p> }
+      } @empty { @if (rows.isLoading()) { <div class="space-y-3" aria-busy="true" aria-label="Loading">@for (k of [1, 2, 3]; track k) { <div class="card space-y-2 p-4"><div class="skeleton h-3 w-1/3"></div><div class="skeleton h-3 w-2/3"></div><div class="skeleton h-3 w-1/2"></div></div> }</div> } @else if (rows.error()) { <div class="empty-state" role="alert"><p class="text-red-600">Could not load inquiries.</p><button type="button" class="btn-outline" (click)="rows.reload()">Retry</button></div> } @else { <div class="empty-state"><p>No inquiries yet.</p></div> } }
     </div>
     @if ((rows.value()?.pages ?? 0) > 1) {
-      <div class="mt-4 flex items-center gap-3 text-sm">
+      <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
         <button type="button" class="btn-outline" [disabled]="page() <= 1" (click)="page.set(page() - 1)">Prev</button>
         <span>Page {{ page() }} of {{ rows.value()?.pages }}</span>
         <button type="button" class="btn-outline" [disabled]="page() >= (rows.value()?.pages ?? 1)" (click)="page.set(page() + 1)">Next</button>
@@ -101,10 +101,10 @@ export class AdminInquiries {
   template: `
     <app-page-header title="Contact messages" />
     <div class="mb-3 flex flex-wrap gap-2">
-      <select class="input !w-auto" [ngModel]="filter()" (ngModelChange)="filter.set($event); page.set(1)" aria-label="Filter">
+      <select class="input min-w-0 flex-1 sm:!w-auto sm:flex-none" [ngModel]="filter()" (ngModelChange)="filter.set($event); page.set(1)" aria-label="Filter">
         <option value="">All</option><option value="false">Unread</option><option value="true">Read</option>
       </select>
-      <input type="search" class="input max-w-xs" placeholder="Search…" [ngModel]="q()" (ngModelChange)="q.set($event); page.set(1)" aria-label="Search" />
+      <input type="search" class="input w-full sm:max-w-xs" placeholder="Search…" [ngModel]="q()" (ngModelChange)="q.set($event); page.set(1)" aria-label="Search" />
     </div>
     <div class="space-y-3">
       @for (m of rows.value()?.items; track m.id) {
@@ -112,21 +112,21 @@ export class AdminInquiries {
           <div class="flex flex-wrap items-center gap-3">
             <strong [class.text-brand]="!m.is_read">{{ m.name }}</strong>
             @if (!m.is_read) { <app-badge tone="green">Unread</app-badge> }
-            @if (m.email) { <a [href]="'mailto:' + m.email" class="text-gray-600 hover:underline">{{ m.email }}</a> }
+            @if (m.email) { <a [href]="'mailto:' + m.email" class="break-all text-gray-600 hover:underline">{{ m.email }}</a> }
             @if (m.phone) { <a [href]="'tel:' + m.phone" class="text-gray-600 hover:underline">{{ m.phone }}</a> }
-            <span class="ml-auto text-gray-500">{{ m.created_at | date: 'medium' }}</span>
+            <span class="text-gray-500 sm:ml-auto">{{ m.created_at | date: 'medium' }}</span>
           </div>
           @if (m.subject) { <p class="mt-2 font-medium">{{ m.subject }}</p> }
           <p class="mt-1 whitespace-pre-line text-gray-700">{{ m.message }}</p>
-          <div class="mt-3 flex gap-4">
-            <button type="button" class="text-brand hover:underline" (click)="mark(m)">Mark as {{ m.is_read ? 'unread' : 'read' }}</button>
-            <button type="button" class="text-red-600 hover:underline" (click)="remove(m.id)">Delete</button>
+          <div class="-mx-3 mt-2 flex flex-wrap gap-1">
+            <button type="button" class="inline-flex min-h-11 items-center rounded-md px-3 text-brand hover:bg-brand/10 focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none" (click)="mark(m)">Mark as {{ m.is_read ? 'unread' : 'read' }}</button>
+            <button type="button" class="inline-flex min-h-11 items-center rounded-md px-3 text-red-600 hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:outline-none" (click)="remove(m.id)">Delete</button>
           </div>
         </article>
-      } @empty { <p class="text-gray-500">{{ rows.isLoading() ? 'Loading…' : 'No messages.' }}</p> }
+      } @empty { @if (rows.isLoading()) { <div class="space-y-3" aria-busy="true" aria-label="Loading">@for (k of [1, 2, 3]; track k) { <div class="card space-y-2 p-4"><div class="skeleton h-3 w-1/3"></div><div class="skeleton h-3 w-2/3"></div><div class="skeleton h-3 w-1/2"></div></div> }</div> } @else if (rows.error()) { <div class="empty-state" role="alert"><p class="text-red-600">Could not load messages.</p><button type="button" class="btn-outline" (click)="rows.reload()">Retry</button></div> } @else { <div class="empty-state"><p>No messages yet.</p></div> } }
     </div>
     @if ((rows.value()?.pages ?? 0) > 1) {
-      <div class="mt-4 flex items-center gap-3 text-sm">
+      <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
         <button type="button" class="btn-outline" [disabled]="page() <= 1" (click)="page.set(page() - 1)">Prev</button>
         <span>Page {{ page() }} of {{ rows.value()?.pages }}</span>
         <button type="button" class="btn-outline" [disabled]="page() >= (rows.value()?.pages ?? 1)" (click)="page.set(page() + 1)">Next</button>

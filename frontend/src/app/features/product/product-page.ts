@@ -32,18 +32,18 @@ export function variantLabel(v: ProductVariant): string {
   template: `
     @if (product.value(); as p) {
       <app-breadcrumbs [crumbs]="crumbs()" />
-      <article class="container-x grid gap-8 pb-8 md:grid-cols-2">
-        <app-gallery [images]="p.images" [alt]="p.name" />
+      <article class="container-x grid gap-6 pb-8 md:grid-cols-2 lg:gap-10">
+        <app-gallery [images]="p.images" [alt]="p.name" class="min-w-0" />
 
-        <div>
-          <h1 class="text-2xl font-bold sm:text-3xl">{{ p.name }}</h1>
+        <div class="min-w-0">
+          <h1 class="h-1 break-words">{{ p.name }}</h1>
           <p class="mt-1 text-sm text-gray-500">SKU: <span>{{ p.sku }}</span></p>
 
           <div class="mt-4 flex flex-wrap items-baseline gap-3">
-            <span class="text-3xl font-bold text-brand">{{ unitPrice() | money }}</span>
+            <span class="text-2xl font-bold text-brand sm:text-3xl">{{ unitPrice() | money }}</span>
             @if (p.sale_price !== null) {
               <span class="text-lg text-gray-500 line-through">{{ p.price + (variant()?.price_delta ?? 0) | money }}</span>
-              <span class="rounded bg-red-600 px-2 py-0.5 text-sm font-semibold text-white">-{{ p.discount_percent }}%</span>
+              <span class="pill bg-red-600 font-semibold text-white">-{{ p.discount_percent }}%</span>
             }
           </div>
           <p class="mt-2 text-sm font-medium" [class]="p.stock_status === 'in_stock' ? 'text-green-700' : p.stock_status === 'out_of_stock' ? 'text-red-600' : 'text-amber-600'">
@@ -58,7 +58,7 @@ export function variantLabel(v: ProductVariant): string {
               <div class="flex flex-wrap gap-2">
                 @for (v of p.variants; track v.id) {
                   <button type="button" (click)="variantId.set(v.id)" [attr.aria-pressed]="variant()?.id === v.id"
-                          class="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm"
+                          class="flex min-h-11 items-center gap-2 rounded-md border px-3 py-1.5 text-sm focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none"
                           [class]="variant()?.id === v.id ? 'border-brand bg-brand/10 text-brand' : 'hover:border-gray-500'">
                     @if (v.color?.hex_code) { <span class="h-4 w-4 rounded-full border" [style.background]="v.color!.hex_code"></span> }
                     {{ label(v) }}
@@ -69,13 +69,13 @@ export function variantLabel(v: ProductVariant): string {
             </fieldset>
           }
 
-          <div class="mt-5 flex items-center gap-3">
-            <div class="flex items-center rounded-md border" role="group" aria-label="Quantity">
-              <button type="button" class="p-2" (click)="qty.set(max(qty() - 1))" aria-label="Decrease quantity"><app-icon name="minus" [size]="16" /></button>
+          <div class="mt-5 flex flex-wrap items-center gap-3">
+            <div class="flex items-center rounded-md border border-gray-300" role="group" aria-label="Quantity">
+              <button type="button" class="icon-btn min-h-11 min-w-11" (click)="qty.set(max(qty() - 1))" aria-label="Decrease quantity"><app-icon name="minus" [size]="16" /></button>
               <span class="w-8 text-center" aria-live="polite">{{ qty() }}</span>
-              <button type="button" class="p-2" (click)="qty.set(max(qty() + 1))" aria-label="Increase quantity"><app-icon name="plus" [size]="16" /></button>
+              <button type="button" class="icon-btn min-h-11 min-w-11" (click)="qty.set(max(qty() + 1))" aria-label="Increase quantity"><app-icon name="plus" [size]="16" /></button>
             </div>
-            <button type="button" class="btn-primary flex-1" (click)="addToCart(p)" [disabled]="p.stock_status === 'out_of_stock'">
+            <button type="button" class="btn-primary min-w-40 flex-1" (click)="addToCart(p)" [disabled]="p.stock_status === 'out_of_stock'">
               <app-icon name="cart" [size]="18" /> Add to cart
             </button>
           </div>
@@ -83,48 +83,63 @@ export function variantLabel(v: ProductVariant): string {
             <app-icon name="whatsapp" [size]="20" /> Order on WhatsApp
           </button>
 
-          <div class="mt-4 flex gap-4 text-sm">
-            <button type="button" class="flex items-center gap-1 hover:text-brand" (click)="wishlist.toggle(p.id)" [attr.aria-pressed]="wishlist.ids().includes(p.id)">
+          <div class="mt-3 flex flex-wrap gap-x-4 text-sm">
+            <button type="button" class="flex min-h-11 items-center gap-1 hover:text-brand" (click)="wishlist.toggle(p.id)" [attr.aria-pressed]="wishlist.ids().includes(p.id)">
               <app-icon name="heart" [size]="18" /> {{ wishlist.ids().includes(p.id) ? 'Saved' : 'Add to wishlist' }}
             </button>
-            <button type="button" class="flex items-center gap-1 hover:text-brand" (click)="toggleCompare(p.id)" [attr.aria-pressed]="compare.ids().includes(p.id)">
+            <button type="button" class="flex min-h-11 items-center gap-1 hover:text-brand" (click)="toggleCompare(p.id)" [attr.aria-pressed]="compare.ids().includes(p.id)">
               <app-icon name="compare" [size]="18" /> {{ compare.ids().includes(p.id) ? 'In compare' : 'Compare' }}
             </button>
           </div>
 
+          <!-- Spacer so the mobile sticky bar never hides content. -->
+          <div class="h-20 lg:hidden" aria-hidden="true"></div>
           @if (p.warranty) { <p class="mt-5 rounded-md bg-gray-50 p-3 text-sm"><strong>Warranty:</strong> {{ p.warranty }}</p> }
         </div>
       </article>
 
+      <div class="sticky-bar flex items-center gap-2 lg:hidden" aria-label="Quick order">
+        <div class="mr-auto min-w-0">
+          <p class="truncate text-xs text-gray-500">{{ p.name }}</p>
+          <p class="font-semibold text-brand">{{ unitPrice() | money }}</p>
+        </div>
+        <button type="button" class="btn-outline shrink-0 px-3" (click)="addToCart(p)" [disabled]="p.stock_status === 'out_of_stock'" aria-label="Add to cart">
+          <app-icon name="cart" [size]="18" /><span class="hidden sm:inline">Add to cart</span>
+        </button>
+        <button type="button" class="btn-whatsapp shrink-0 px-3" (click)="orderOnWhatsApp(p)">
+          <app-icon name="whatsapp" [size]="18" /> Order
+        </button>
+      </div>
+
       <section class="container-x pb-8">
-        <div role="tablist" class="flex gap-1 border-b">
+        <div role="tablist" class="flex gap-1 overflow-x-auto border-b border-gray-200 [scrollbar-width:none]">
           @for (t of tabs; track t.id) {
             <button type="button" role="tab" [attr.aria-selected]="tab() === t.id" (click)="tab.set(t.id)"
-                    class="-mb-px border-b-2 px-4 py-2 text-sm font-medium"
+                    class="-mb-px min-h-11 shrink-0 whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium"
                     [class]="tab() === t.id ? 'border-brand text-brand' : 'border-transparent text-gray-600'">{{ t.label }}</button>
           }
         </div>
         <div class="py-5" role="tabpanel">
           @switch (tab()) {
             @case ('description') {
-              @if (p.description_html) { <div class="prose-content max-w-3xl" [innerHTML]="p.description_html"></div> }
+              @if (p.description_html) { <div class="prose-content max-w-3xl break-words" [innerHTML]="p.description_html"></div> }
               @else { <p class="text-gray-500">No description available.</p> }
             }
             @case ('specs') {
               @if (p.specs.length || p.materials.length || p.dimensions) {
-                <table class="w-full max-w-2xl text-sm">
+                <div class="table-wrap"><table class="w-full max-w-2xl text-sm">
                   <tbody>
-                    @if (p.dimensions) { <tr class="border-b"><th class="w-1/3 py-2 pr-3 text-left font-medium text-gray-600">Dimensions</th><td>{{ p.dimensions }}</td></tr> }
-                    @if (p.materials.length) { <tr class="border-b"><th class="w-1/3 py-2 pr-3 text-left font-medium text-gray-600">Materials</th><td>{{ materialNames() }}</td></tr> }
-                    @for (s of p.specs; track s.key) { <tr class="border-b"><th class="w-1/3 py-2 pr-3 text-left font-medium text-gray-600">{{ s.key }}</th><td>{{ s.value }}</td></tr> }
+                    @if (p.dimensions) { <tr class="border-b border-gray-200"><th class="w-1/3 py-2 pr-3 text-left align-top font-medium text-gray-600">Dimensions</th><td class="py-2 break-words">{{ p.dimensions }}</td></tr> }
+                    @if (p.materials.length) { <tr class="border-b border-gray-200"><th class="w-1/3 py-2 pr-3 text-left align-top font-medium text-gray-600">Materials</th><td class="py-2 break-words">{{ materialNames() }}</td></tr> }
+                    @for (s of p.specs; track s.key) { <tr class="border-b border-gray-200"><th class="w-1/3 py-2 pr-3 text-left align-top font-medium text-gray-600">{{ s.key }}</th><td class="py-2 break-words">{{ s.value }}</td></tr> }
                   </tbody>
-                </table>
+                </table></div>
               } @else { <p class="text-gray-500">No specifications available.</p> }
             }
             @case ('dimensions') {
               @if (p.dimensions) { <p class="mb-3">{{ p.dimensions }}</p> }
               <div class="flex flex-wrap gap-4">
-                @for (img of dimensionImages(); track img.id) { <img [src]="img.url" [alt]="'Dimensions of ' + p.name" loading="lazy" class="max-h-96 rounded border" /> }
+                @for (img of dimensionImages(); track img.id) { <img [src]="img.url" [alt]="'Dimensions of ' + p.name" loading="lazy" class="h-auto max-h-96 max-w-full rounded border border-gray-200" /> }
               </div>
               @if (!p.dimensions && !dimensionImages().length) { <p class="text-gray-500">Dimension details are not available.</p> }
             }
@@ -133,20 +148,28 @@ export function variantLabel(v: ProductVariant): string {
       </section>
 
       @if (related.value()?.length) {
-        <section class="container-x pb-8"><h2 class="mb-4 text-xl font-bold">You may also like</h2>
-          <div class="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">@for (r of related.value(); track r.id) { <app-product-card [product]="r" /> }</div></section>
+        <section class="container-x pb-8"><h2 class="h-2 mb-4">You may also like</h2>
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">@for (r of related.value(); track r.id) { <app-product-card [product]="r" /> }</div></section>
       }
       @if (recent.value()?.length) {
-        <section class="container-x pb-8"><h2 class="mb-4 text-xl font-bold">Recently viewed</h2>
-          <div class="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">@for (r of recent.value(); track r.id) { <app-product-card [product]="r" /> }</div></section>
+        <section class="container-x pb-8"><h2 class="h-2 mb-4">Recently viewed</h2>
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">@for (r of recent.value(); track r.id) { <app-product-card [product]="r" /> }</div></section>
       }
     } @else if (product.isLoading()) {
-      <div class="container-x py-24 text-center text-gray-500">Loading…</div>
+      <div class="container-x grid gap-6 py-8 md:grid-cols-2 lg:gap-10" aria-busy="true" aria-label="Loading product">
+        <div class="skeleton aspect-square rounded-lg"></div>
+        <div class="space-y-4">
+          <div class="skeleton h-8 w-3/4"></div><div class="skeleton h-4 w-1/4"></div><div class="skeleton h-9 w-1/3"></div>
+          <div class="skeleton h-20 w-full"></div><div class="skeleton h-11 w-full"></div><div class="skeleton h-11 w-full"></div>
+        </div>
+      </div>
     } @else {
-      <div class="container-x py-24 text-center">
-        <h1 class="text-2xl font-bold">Product not found</h1>
-        <p class="mt-2 text-gray-600">It may have been removed or is no longer available.</p>
-        <a routerLink="/products" class="btn-primary mt-6">Browse products</a>
+      <div class="container-x page-y">
+        <div class="empty-state">
+        <h1 class="h-2">Product not found</h1>
+        <p class="text-muted">It may have been removed or is no longer available.</p>
+        <a routerLink="/products" class="btn-primary mt-2">Browse products</a>
+        </div>
       </div>
     }
   `,

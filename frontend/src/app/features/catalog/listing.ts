@@ -36,52 +36,63 @@ const num = (value: string | null): number | null => {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-breadcrumbs [crumbs]="crumbs()" />
-    <div class="container-x pb-8">
+    <div class="container-x pb-10">
       <header class="mb-4">
-        <h1 class="text-2xl font-bold sm:text-3xl">{{ heading() }}</h1>
+        <h1 class="h-1 break-words">{{ heading() }}</h1>
         @if (category.value(); as c) {
           @if (c.children.length) {
-            <ul class="mt-3 flex flex-wrap gap-2">
+            <ul class="scroll-x mt-3 gap-2 sm:flex-wrap sm:overflow-visible">
               @for (child of c.children; track child.id) {
-                <li><a [routerLink]="['/category', child.slug]" class="rounded-full border px-3 py-1 text-sm hover:border-brand hover:text-brand">{{ child.name }}</a></li>
+                <li><a [routerLink]="['/category', child.slug]" class="chip min-h-11 whitespace-nowrap">{{ child.name }}</a></li>
               }
             </ul>
           }
         }
       </header>
 
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-y py-3">
-        <button type="button" class="btn-outline lg:hidden" (click)="filtersOpen.set(!filtersOpen())" [attr.aria-expanded]="filtersOpen()">
-          Filters @if (activeFilterCount()) { ({{ activeFilterCount() }}) }
+      <div class="sticky top-[68px] z-20 -mx-4 mb-4 flex items-center justify-between gap-2 border-y border-gray-200 bg-white/95 px-4 py-2 backdrop-blur sm:mx-0 sm:px-0 lg:static lg:bg-transparent lg:py-3 lg:backdrop-blur-none">
+        <button type="button" class="btn-outline shrink-0 lg:hidden" (click)="filtersOpen.set(true)" [attr.aria-expanded]="filtersOpen()" aria-controls="listing-filters">
+          Filters @if (activeFilterCount()) { <span class="pill bg-brand text-white">{{ activeFilterCount() }}</span> }
         </button>
-        <p class="text-sm text-gray-600" aria-live="polite">
+        <p class="hidden text-sm text-gray-600 sm:block" aria-live="polite">
           @if (products.value(); as p) { {{ p.total }} product{{ p.total === 1 ? '' : 's' }} }
         </p>
-        <label class="flex items-center gap-2 text-sm">Sort by
-          <select class="input !w-auto" [ngModel]="query().sort" (ngModelChange)="update({ sort: $event === 'new' ? null : $event })">
+        <label class="flex min-w-0 items-center gap-2 text-sm"><span class="hidden sm:inline">Sort by</span>
+          <select class="input !w-auto max-w-[55vw] sm:max-w-none" aria-label="Sort by" [ngModel]="query().sort" (ngModelChange)="update({ sort: $event === 'new' ? null : $event })">
             @for (s of sorts; track s.value) { <option [value]="s.value">{{ s.label }}</option> }
           </select>
         </label>
       </div>
 
-      <div class="grid gap-8 lg:grid-cols-[16rem_1fr]">
-        <aside [class.hidden]="!filtersOpen()" class="space-y-6 lg:!block" aria-label="Filters">
-          @if (activeFilterCount()) { <button type="button" class="text-sm text-brand underline" (click)="clearFilters()">Clear all filters</button> }
+      <p class="-mt-2 mb-3 text-sm text-gray-600 sm:hidden" aria-hidden="true">
+        @if (products.value(); as p) { {{ p.total }} product{{ p.total === 1 ? '' : 's' }} }
+      </p>
+      <div class="grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
+        @if (filtersOpen()) {
+          <button type="button" class="fixed inset-0 z-40 bg-black/50 lg:hidden" aria-label="Close filters" (click)="filtersOpen.set(false)"></button>
+        }
+        <aside id="listing-filters" [class.hidden]="!filtersOpen()" (keydown.escape)="filtersOpen.set(false)"
+               class="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] space-y-6 overflow-y-auto overscroll-contain bg-white px-4 pb-24 shadow-xl lg:static lg:z-auto lg:!block lg:w-auto lg:max-w-none lg:overflow-visible lg:p-0 lg:shadow-none" aria-label="Filters">
+          <div class="sticky top-0 z-10 -mx-4 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2 lg:hidden">
+            <span class="h-3">Filters</span>
+            <button type="button" class="icon-btn min-h-11 min-w-11 text-xl" aria-label="Close filters" (click)="filtersOpen.set(false)">&times;</button>
+          </div>
+          @if (activeFilterCount()) { <button type="button" class="min-h-11 text-sm text-brand underline" (click)="clearFilters()">Clear all filters</button> }
 
           @if (facets.value(); as f) {
             <fieldset>
               <legend class="mb-2 font-semibold">Price</legend>
               <div class="flex items-center gap-2">
-                <input type="number" min="0" class="input" placeholder="Min" aria-label="Minimum price" [(ngModel)]="minPrice" />
+                <input type="number" inputmode="numeric" min="0" class="input" placeholder="Min" aria-label="Minimum price" [(ngModel)]="minPrice" />
                 <span>–</span>
-                <input type="number" min="0" class="input" placeholder="Max" aria-label="Maximum price" [(ngModel)]="maxPrice" />
+                <input type="number" inputmode="numeric" min="0" class="input" placeholder="Max" aria-label="Maximum price" [(ngModel)]="maxPrice" />
               </div>
               @if (f.max_price > 0) { <p class="mt-1 text-xs text-gray-500">Range: {{ f.min_price | money }} – {{ f.max_price | money }}</p> }
               <button type="button" class="btn-outline mt-2 w-full" (click)="applyPrice()">Apply</button>
             </fieldset>
 
-            <label class="flex items-center gap-2 text-sm">
-              <input type="checkbox" [checked]="query().on_sale" (change)="update({ on_sale: $any($event.target).checked ? 'true' : null })" />
+            <label class="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
+              <input type="checkbox" class="size-4 accent-brand" [checked]="query().on_sale" (change)="update({ on_sale: $any($event.target).checked ? 'true' : null })" />
               On sale only
             </label>
 
@@ -90,30 +101,45 @@ const num = (value: string | null): number | null => {
             @if (f.colors.length) { <ng-container [ngTemplateOutlet]="group" [ngTemplateOutletContext]="{ title: 'Colour', key: 'colors', options: f.colors }" /> }
             @if (f.materials.length) { <ng-container [ngTemplateOutlet]="group" [ngTemplateOutletContext]="{ title: 'Material', key: 'materials', options: f.materials }" /> }
           }
+          <div class="fixed bottom-0 left-0 w-80 max-w-[85vw] border-t border-gray-200 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] lg:hidden">
+            <button type="button" class="btn-primary w-full" (click)="filtersOpen.set(false)">
+              Show @if (products.value(); as p) { {{ p.total }} } results
+            </button>
+          </div>
         </aside>
 
         <section aria-label="Products">
           @if (products.isLoading() && !products.value()) {
-            <div class="grid grid-cols-2 gap-4 md:grid-cols-3">
-              @for (n of [1, 2, 3, 4, 5, 6]; track n) { <div class="aspect-[3/4] animate-pulse rounded-lg bg-gray-100"></div> }
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4" aria-busy="true" aria-label="Loading products">
+              @for (n of [1, 2, 3, 4, 5, 6, 7, 8]; track n) {
+                <div class="card overflow-hidden">
+                  <div class="skeleton aspect-square rounded-none"></div>
+                  <div class="space-y-2 p-3"><div class="skeleton h-3 w-1/3"></div><div class="skeleton h-4 w-4/5"></div><div class="skeleton h-4 w-1/2"></div><div class="skeleton mt-2 h-11 w-full"></div></div>
+                </div>
+              }
             </div>
           } @else if (products.value(); as p) {
             @if (p.items.length) {
-              <div class="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3" [class.opacity-60]="products.isLoading()">
+              <div class="grid grid-cols-2 gap-3 transition-opacity sm:grid-cols-3 sm:gap-4 xl:grid-cols-4" [class.opacity-60]="products.isLoading()" [attr.aria-busy]="products.isLoading()">
                 @for (item of p.items; track item.id; let i = $index) { <app-product-card [product]="item" [priority]="i < 3" /> }
               </div>
               <app-pagination [page]="p.page" [pages]="p.pages" (pageChange)="update({ page: $event === 1 ? null : $event })" />
             } @else {
-              <div class="rounded-lg border border-dashed p-12 text-center text-gray-600">
-                <p class="text-lg">No products match your filters.</p>
-                <button type="button" class="btn-primary mt-4" (click)="clearFilters()">Clear filters</button>
+              <div class="empty-state">
+                <p class="h-3">No products match your filters.</p>
+                <p class="text-muted">Try removing a filter or browsing all products.</p>
+                @if (activeFilterCount()) {
+                  <button type="button" class="btn-primary mt-2" (click)="clearFilters()">Clear filters</button>
+                } @else {
+                  <a routerLink="/products" class="btn-primary mt-2">Browse all products</a>
+                }
               </div>
             }
           } @else if (products.error()) {
-            <p class="rounded-lg border border-red-200 bg-red-50 p-6 text-red-700">We couldn't load products. Please try again.</p>
+            <div class="rounded-lg border border-red-200 bg-red-50 p-6 text-red-700" role="alert">We couldn't load products. <button type="button" class="ml-1 min-h-11 font-medium underline" (click)="products.reload()">Try again</button></div>
           }
           @if (category.value()?.description_html; as html) {
-            <div class="prose-content mt-10 border-t pt-6 text-sm text-gray-700" [innerHTML]="html"></div>
+            <div class="prose-content mt-10 border-t border-gray-200 pt-6 break-words text-sm text-gray-700" [innerHTML]="html"></div>
           }
         </section>
       </div>
@@ -122,11 +148,11 @@ const num = (value: string | null): number | null => {
     <ng-template #group let-title="title" let-key="key" let-options="options">
       <fieldset>
         <legend class="mb-2 font-semibold">{{ title }}</legend>
-        <ul class="max-h-52 space-y-1.5 overflow-auto">
+        <ul class="max-h-64 overflow-auto lg:max-h-52">
           @for (o of options; track o.slug) {
             <li>
-              <label class="flex cursor-pointer items-center gap-2 text-sm">
-                <input type="checkbox" [checked]="isChecked(key, o.slug)" (change)="toggle(key, o.slug)" />
+              <label class="flex min-h-11 cursor-pointer items-center gap-2 text-sm lg:min-h-9">
+                <input type="checkbox" class="size-4 accent-brand" [checked]="isChecked(key, o.slug)" (change)="toggle(key, o.slug)" />
                 @if (o.hex_code) { <span class="h-3.5 w-3.5 rounded-full border" [style.background]="o.hex_code"></span> }
                 <span class="flex-1">{{ o.name }}</span><span class="text-xs text-gray-400">{{ o.count }}</span>
               </label>

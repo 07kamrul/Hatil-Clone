@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { SettingsStore } from '../../../core/settings-store';
 import { Toast } from '../../../core/toast';
 import { AdminApi, apiError } from '../core/admin-api';
+import { FormActions } from '../ui/form-actions';
 import { ImageInput } from '../ui/image-input';
+import { PageHeader } from '../ui/page-header';
 import { MapPointPicker, MapPointValue } from '../ui/map-point-picker';
 
 type Kind = 'text' | 'textarea' | 'color' | 'image' | 'checkbox' | 'map';
@@ -45,21 +47,21 @@ const GROUPS: { title: string; fields: SettingField[] }[] = [
 
 @Component({
   selector: 'app-admin-settings',
-  imports: [FormsModule, ImageInput, MapPointPicker],
+  imports: [FormsModule, ImageInput, MapPointPicker, FormActions, PageHeader],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <h1 class="mb-5 text-2xl font-bold">Settings</h1>
+    <app-page-header title="Settings" subtitle="Branding, contact details and site-wide options." />
     @if (loaded()) {
-      <form class="max-w-3xl space-y-6" (submit)="save($event)">
+      <form class="max-w-4xl space-y-6" (submit)="save($event)">
         @for (g of groups; track g.title) {
-          <section class="card space-y-4 p-5">
-            <h2 class="font-semibold">{{ g.title }}</h2>
+          <section class="card grid gap-4 p-4 sm:p-5 md:grid-cols-2">
+            <h2 class="font-semibold md:col-span-2">{{ g.title }}</h2>
             @for (f of g.fields; track f.key) {
-              <div>
+              <div class="min-w-0" [class.md:col-span-2]="f.kind === 'textarea' || f.kind === 'map' || f.kind === 'image'">
                 @switch (f.kind) {
-                  @case ('checkbox') { <label class="flex items-center gap-2 text-sm"><input type="checkbox" [name]="f.key" [(ngModel)]="values[f.key]" /> {{ f.label }}</label> }
+                  @case ('checkbox') { <label class="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" class="h-5 w-5" [name]="f.key" [(ngModel)]="values[f.key]" /> {{ f.label }}</label> }
                   @case ('textarea') { <label class="label" [for]="f.key">{{ f.label }}</label><textarea [id]="f.key" [name]="f.key" rows="4" class="input" [(ngModel)]="values[f.key]"></textarea> }
-                  @case ('color') { <label class="label" [for]="f.key">{{ f.label }}</label><input [id]="f.key" type="color" [name]="f.key" class="h-10 w-20 rounded border" [(ngModel)]="values[f.key]" /> }
+                  @case ('color') { <label class="label" [for]="f.key">{{ f.label }}</label><input [id]="f.key" type="color" [name]="f.key" class="h-11 w-20 rounded border" [(ngModel)]="values[f.key]" /> }
                   @case ('image') { <span class="label">{{ f.label }}</span><app-image-input [name]="f.key" folder="branding" [(ngModel)]="values[f.key]" /> }
                   @case ('map') {
                     <span class="label">{{ f.label }}</span>
@@ -73,9 +75,13 @@ const GROUPS: { title: string; fields: SettingField[] }[] = [
           </section>
         }
         @if (error()) { <p class="rounded bg-red-50 p-3 text-sm text-red-700" role="alert">{{ error() }}</p> }
-        <button type="submit" class="btn-primary" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save settings' }}</button>
+        <app-form-actions>
+          <button type="submit" class="btn-primary" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save settings' }}</button>
+        </app-form-actions>
       </form>
-    } @else { <p class="text-gray-500">Loading…</p> }
+    } @else {
+      <div class="max-w-4xl space-y-6" aria-busy="true" aria-label="Loading settings">@for (k of [1, 2]; track k) { <div class="card grid gap-4 p-5 md:grid-cols-2"><div class="skeleton h-4 w-32 md:col-span-2"></div>@for (j of [1, 2, 3, 4]; track j) { <div class="space-y-2"><div class="skeleton h-3 w-24"></div><div class="skeleton h-11 w-full"></div></div> }</div> }</div>
+    }
   `,
 })
 export class AdminSettings {

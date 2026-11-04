@@ -20,25 +20,57 @@ const PAGE_SIZE = 25;
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header [title]="def().title">
-      <a actions [routerLink]="['new']" class="btn-primary"><app-icon name="plus" [size]="16" /> New {{ def().singular }}</a>
+      <a actions [routerLink]="['new']" class="btn-primary w-full sm:w-auto"><app-icon name="plus" [size]="16" /> New {{ def().singular }}</a>
     </app-page-header>
     <div class="mb-4 flex flex-wrap items-center gap-2">
-      <input type="search" class="input max-w-full sm:max-w-xs" placeholder="Search…" [ngModel]="q()" (ngModelChange)="q.set($event); page.set(1)" aria-label="Search" />
+      <input type="search" class="input w-full sm:max-w-xs" placeholder="Search…" [ngModel]="q()" (ngModelChange)="q.set($event); page.set(1)" aria-label="Search" />
       @if (total() > 0) { <span class="text-sm text-gray-500">{{ total() }} {{ total() === 1 ? def().singular : def().title.toLowerCase() }}</span> }
     </div>
     @if (rows.error()) {
-      <div class="card flex flex-col items-center gap-3 p-10 text-center">
+      <div class="empty-state" role="alert">
         <p class="text-sm text-red-600">{{ rows.error() }}</p>
         <button type="button" class="btn-outline" (click)="rows.reload()">Retry</button>
       </div>
     } @else if (rows.isLoading()) {
-      <div class="card divide-y">
+      <div class="card divide-y" aria-busy="true" aria-label="Loading">
         @for (i of [1, 2, 3]; track i) {
-          <div class="p-4"><div class="skeleton h-3 w-1/3"></div></div>
+          <div class="flex items-center gap-3 p-4"><div class="skeleton h-10 w-14"></div><div class="flex-1 space-y-2"><div class="skeleton h-3 w-1/3"></div><div class="skeleton h-3 w-1/5"></div></div></div>
         }
       </div>
+    } @else if (!rows.value()?.items?.length) {
+      <div class="empty-state">
+        <p>{{ q() ? 'Nothing matches your search.' : 'Nothing here yet.' }}</p>
+        <a [routerLink]="['new']" class="btn-primary"><app-icon name="plus" [size]="16" /> New {{ def().singular }}</a>
+      </div>
     } @else {
-      <div class="overflow-hidden rounded-lg border bg-white">
+      <!-- Mobile cards -->
+      <ul class="space-y-3 md:hidden">
+        @for (row of rows.value()?.items; track row.id) {
+          <li class="card p-4">
+            <dl class="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm">
+              @for (c of def().columns; track c.key) {
+                <dt class="truncate text-gray-500">{{ c.label }}</dt>
+                <dd class="min-w-0 break-words">
+                  @switch (c.type) {
+                    @case ('image') { @if (row[c.key]) { <img [src]="row[c.key]" alt="" class="h-14 w-24 rounded object-cover" /> } @else { <span class="text-gray-400">—</span> } }
+                    @case ('bool') { @if (row[c.key]) { <app-badge tone="green">Yes</app-badge> } @else { <app-badge tone="gray">No</app-badge> } }
+                    @case ('date') { {{ $any(row[c.key]) | date: 'mediumDate' }} }
+                    @case ('color') { <span class="inline-block h-5 w-5 rounded-full border align-middle" [style.background]="row[c.key]"></span> }
+                    @default { {{ row[c.key] }} }
+                  }
+                </dd>
+              }
+            </dl>
+            <div class="mt-3 flex flex-wrap gap-2 border-t pt-3">
+              <a [routerLink]="[row.id]" class="btn-outline flex-1"><app-icon name="pencil" [size]="16" /> Edit</a>
+              @if (def().viewPrefix && row['slug']) { <a [href]="(def().viewPrefix ?? '') + row['slug']" target="_blank" class="btn-outline" aria-label="View on site"><app-icon name="external" [size]="16" /></a> }
+              <button type="button" class="btn-outline flex-1 !text-red-600 hover:!border-red-300" (click)="remove(row)"><app-icon name="trash" [size]="16" /> Delete</button>
+            </div>
+          </li>
+        }
+      </ul>
+      <!-- Desktop table -->
+      <div class="table-wrap hidden rounded-lg border bg-white md:block">
         <table class="table-admin">
           <thead>
             <tr>
@@ -66,15 +98,13 @@ const PAGE_SIZE = 25;
                   <button type="button" class="icon-btn hover:bg-red-50 hover:text-red-600" title="Delete" aria-label="Delete {{ row['name'] ?? row['title'] ?? 'item' }}" (click)="remove(row)"><app-icon name="trash" [size]="16" /></button>
                 </td>
               </tr>
-            } @empty {
-              <tr><td class="px-3 py-8 text-center text-gray-500" [attr.colspan]="def().columns.length + 1">Nothing here yet.</td></tr>
             }
           </tbody>
         </table>
       </div>
     }
     @if ((rows.value()?.pages ?? 0) > 1) {
-      <div class="mt-4 flex items-center gap-3 text-sm">
+      <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
         <button type="button" class="btn-outline" [disabled]="page() <= 1" (click)="page.set(page() - 1)">Prev</button>
         <span>Page {{ page() }} of {{ rows.value()?.pages }}</span>
         <button type="button" class="btn-outline" [disabled]="page() >= (rows.value()?.pages ?? 1)" (click)="page.set(page() + 1)">Next</button>

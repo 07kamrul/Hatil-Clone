@@ -10,6 +10,7 @@ import { Dialog } from '../../../core/dialog';
 import { Toast } from '../../../core/toast';
 import { AdminApi, apiError } from '../core/admin-api';
 import { HtmlEditor } from '../ui/html-editor';
+import { FormActions } from '../ui/form-actions';
 
 interface CategoryOption { id: number; name: string; parent_id: number | null }
 interface VariantForm { color_id: number | null; size: string; sku: string; price_delta: number; stock_status: StockStatus }
@@ -59,17 +60,17 @@ export function toPayload(f: ProductForm): Record<string, unknown> {
 
 @Component({
   selector: 'app-admin-product-form',
-  imports: [FormsModule, RouterLink, HtmlEditor, CdkDropList, CdkDrag, CdkDragHandle],
+  imports: [FormsModule, RouterLink, HtmlEditor, CdkDropList, CdkDrag, CdkDragHandle, FormActions],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <a routerLink="/admin/products" class="text-sm text-gray-600 hover:underline">← Back to products</a>
-    <div class="mb-5 mt-2 flex flex-wrap items-center justify-between gap-3">
-      <h1 class="text-2xl font-bold">{{ isNew() ? 'New product' : form.name || 'Edit product' }}</h1>
+    <a routerLink="/admin/products" class="inline-flex min-h-11 items-center text-sm text-gray-600 hover:underline">← Back to products</a>
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <h1 class="min-w-0 break-words text-2xl font-bold">{{ isNew() ? 'New product' : form.name || 'Edit product' }}</h1>
       @if (!isNew() && slug()) { <a [href]="'/product/' + slug()" target="_blank" class="text-sm text-brand hover:underline">View on site ↗</a> }
     </div>
 
-    <form (submit)="save($event)" class="grid gap-6 xl:grid-cols-[1fr_22rem]">
-      <div class="space-y-6">
+    <form (submit)="save($event)" class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem]">
+      <div class="min-w-0 space-y-6">
         <section class="card space-y-4 p-5">
           <h2 class="font-semibold">Basics</h2>
           <div class="grid gap-4 sm:grid-cols-2">
@@ -87,7 +88,7 @@ export function toPayload(f: ProductForm): Record<string, unknown> {
           @else {
             <div cdkDropList cdkDropListOrientation="mixed" (cdkDropListDropped)="dropImage($event)" class="flex flex-wrap gap-3">
               @for (img of images(); track img.id; let i = $index) {
-                <figure cdkDrag class="w-36 rounded border bg-white p-1.5 text-xs">
+                <figure cdkDrag class="w-[calc(50%-0.375rem)] sm:w-36 rounded border bg-white p-1.5 text-xs">
                   <div cdkDragHandle class="relative cursor-move">
                     <img [src]="img.thumb_url || img.url" [alt]="img.alt || ''" class="h-28 w-full rounded object-cover" />
                     @if (i === 0) { <span class="absolute left-1 top-1 rounded bg-brand px-1 text-[10px] text-white">Main</span> }
@@ -105,10 +106,10 @@ export function toPayload(f: ProductForm): Record<string, unknown> {
         </section>
 
         <section class="card space-y-3 p-5">
-          <div class="flex items-center justify-between"><h2 class="font-semibold">Variants</h2>
-            <button type="button" class="btn-outline !py-1" (click)="addVariant()">+ Add variant</button></div>
+          <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="font-semibold">Variants</h2>
+            <button type="button" class="btn-outline" (click)="addVariant()">+ Add variant</button></div>
           @for (v of form.variants; track $index; let i = $index) {
-            <div class="grid items-end gap-2 sm:grid-cols-[1fr_1fr_1fr_8rem_9rem_auto]">
+            <div class="grid grid-cols-2 items-end gap-2 rounded-md border border-gray-200 p-3 lg:grid-cols-[1fr_1fr_1fr_7rem_9rem_auto] lg:border-0 lg:p-0">
               <div><label class="label">Colour</label><select class="input" [name]="'v-color-' + i" [(ngModel)]="v.color_id">
                 <option [ngValue]="null">—</option>@for (c of options.value()?.colors; track c.id) { <option [ngValue]="c.id">{{ c.name }}</option> }</select></div>
               <div><label class="label">Size</label><input class="input" [name]="'v-size-' + i" [(ngModel)]="v.size" /></div>
@@ -116,23 +117,23 @@ export function toPayload(f: ProductForm): Record<string, unknown> {
               <div><label class="label">+ Price</label><input type="number" min="0" class="input" [name]="'v-delta-' + i" [(ngModel)]="v.price_delta" /></div>
               <div><label class="label">Stock</label><select class="input" [name]="'v-stock-' + i" [(ngModel)]="v.stock_status">
                 @for (s of stockOptions; track s.value) { <option [value]="s.value">{{ s.label }}</option> }</select></div>
-              <button type="button" class="pb-2 text-red-600" (click)="form.variants.splice(i, 1)" aria-label="Remove variant">✕</button>
+              <button type="button" class="icon-btn h-11 w-11 justify-self-end text-red-600 hover:bg-red-50 hover:text-red-700" (click)="form.variants.splice(i, 1)" aria-label="Remove variant">✕</button>
             </div>
           } @empty { <p class="text-sm text-gray-500">No variants. Add colour/size options with an optional price difference.</p> }
         </section>
 
         <section class="card space-y-3 p-5">
-          <div class="flex items-center justify-between"><h2 class="font-semibold">Specifications</h2>
-            <button type="button" class="btn-outline !py-1" (click)="form.specs.push({ key: '', value: '' })">+ Add row</button></div>
+          <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="font-semibold">Specifications</h2>
+            <button type="button" class="btn-outline" (click)="form.specs.push({ key: '', value: '' })">+ Add row</button></div>
           <div class="grid gap-4 sm:grid-cols-2">
             <div><label class="label" for="p-dim">Dimensions</label><input id="p-dim" name="dimensions" class="input" placeholder="L 210 × W 90 × H 85 cm" [(ngModel)]="form.dimensions" /></div>
             <div><label class="label" for="p-war">Warranty</label><input id="p-war" name="warranty" class="input" [(ngModel)]="form.warranty" /></div>
           </div>
           @for (s of form.specs; track $index; let i = $index) {
             <div class="flex gap-2">
-              <input class="input" placeholder="Name (e.g. Finish)" [name]="'s-key-' + i" [(ngModel)]="s.key" />
-              <input class="input" placeholder="Value" [name]="'s-val-' + i" [(ngModel)]="s.value" />
-              <button type="button" class="text-red-600" (click)="form.specs.splice(i, 1)" aria-label="Remove row">✕</button>
+              <input class="input min-w-0" placeholder="Name (e.g. Finish)" [name]="'s-key-' + i" [(ngModel)]="s.key" />
+              <input class="input min-w-0" placeholder="Value" [name]="'s-val-' + i" [(ngModel)]="s.value" />
+              <button type="button" class="icon-btn h-11 w-11 shrink-0 text-red-600 hover:bg-red-50 hover:text-red-700" (click)="form.specs.splice(i, 1)" aria-label="Remove row">✕</button>
             </div>
           }
         </section>
@@ -146,17 +147,17 @@ export function toPayload(f: ProductForm): Record<string, unknown> {
         </section>
       </div>
 
-      <div class="space-y-6">
+      <div class="min-w-0 space-y-6 lg:sticky lg:top-20 lg:self-start">
         <section class="card space-y-3 p-5">
           <h2 class="font-semibold">Publish</h2>
-          <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_published" [(ngModel)]="form.is_published" /> Published</label>
-          <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_featured" [(ngModel)]="form.is_featured" /> Featured</label>
-          <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_best_seller" [(ngModel)]="form.is_best_seller" /> Best seller</label>
+          <label class="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" class="h-5 w-5" name="is_published" [(ngModel)]="form.is_published" /> Published</label>
+          <label class="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" class="h-5 w-5" name="is_featured" [(ngModel)]="form.is_featured" /> Featured</label>
+          <label class="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" class="h-5 w-5" name="is_best_seller" [(ngModel)]="form.is_best_seller" /> Best seller</label>
           @if (error()) { <p class="rounded bg-red-50 p-2 text-sm text-red-700" role="alert">{{ error() }}</p> }
-          <div class="flex gap-2">
-            <button type="submit" class="btn-primary flex-1" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save' }}</button>
+          <app-form-actions>
+            <button type="submit" class="btn-primary md:!flex-1" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save' }}</button>
             @if (!isNew()) { <button type="button" class="btn-danger" (click)="remove()">Delete</button> }
-          </div>
+          </app-form-actions>
         </section>
 
         <section class="card space-y-3 p-5">
@@ -172,12 +173,12 @@ export function toPayload(f: ProductForm): Record<string, unknown> {
           <div><label class="label" for="p-cat">Category</label><select id="p-cat" name="category_id" class="input" [(ngModel)]="form.category_id">
             <option [ngValue]="null">— none —</option>@for (c of categoryOptions(); track c.id) { <option [ngValue]="c.id">{{ c.label }}</option> }</select></div>
           <fieldset><legend class="label">Colours</legend><div class="flex flex-wrap gap-2">
-            @for (c of options.value()?.colors; track c.id) { <label class="flex items-center gap-1 text-sm"><input type="checkbox" [checked]="form.color_ids.includes(c.id)" (change)="toggleId('color_ids', c.id)" />
+            @for (c of options.value()?.colors; track c.id) { <label class="flex min-h-9 items-center gap-1.5 text-sm"><input type="checkbox" class="h-4 w-4" [checked]="form.color_ids.includes(c.id)" (change)="toggleId('color_ids', c.id)" />
               <span class="h-3 w-3 rounded-full border" [style.background]="c.hex_code"></span>{{ c.name }}</label> }</div></fieldset>
           <fieldset><legend class="label">Materials</legend><div class="flex flex-wrap gap-2">
-            @for (m of options.value()?.materials; track m.id) { <label class="flex items-center gap-1 text-sm"><input type="checkbox" [checked]="form.material_ids.includes(m.id)" (change)="toggleId('material_ids', m.id)" />{{ m.name }}</label> }</div></fieldset>
+            @for (m of options.value()?.materials; track m.id) { <label class="flex min-h-9 items-center gap-1.5 text-sm"><input type="checkbox" class="h-4 w-4" [checked]="form.material_ids.includes(m.id)" (change)="toggleId('material_ids', m.id)" />{{ m.name }}</label> }</div></fieldset>
           <fieldset><legend class="label">Rooms</legend><div class="flex flex-wrap gap-2">
-            @for (r of options.value()?.rooms; track r.id) { <label class="flex items-center gap-1 text-sm"><input type="checkbox" [checked]="form.room_ids.includes(r.id)" (change)="toggleId('room_ids', r.id)" />{{ r.name }}</label> }</div></fieldset>
+            @for (r of options.value()?.rooms; track r.id) { <label class="flex min-h-9 items-center gap-1.5 text-sm"><input type="checkbox" class="h-4 w-4" [checked]="form.room_ids.includes(r.id)" (change)="toggleId('room_ids', r.id)" />{{ r.name }}</label> }</div></fieldset>
         </section>
       </div>
     </form>

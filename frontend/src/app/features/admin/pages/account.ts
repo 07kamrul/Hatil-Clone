@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 
 import { Toast } from '../../../core/toast';
 import { Icon } from '../../../shared/ui/icon';
+import { FormActions } from '../ui/form-actions';
 import { PageHeader } from '../ui/page-header';
 import { AdminApi, apiError } from '../core/admin-api';
 import { AdminAuth } from '../core/admin-auth';
@@ -11,11 +12,11 @@ const MIN_PASSWORD = 8;
 
 @Component({
   selector: 'app-admin-account',
-  imports: [FormsModule, Icon, PageHeader],
+  imports: [FormsModule, Icon, PageHeader, FormActions],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="My account" [subtitle]="'Signed in as ' + (auth.user()?.email ?? '')" />
-    <form class="card max-w-md space-y-4 p-5" (submit)="save($event)">
+    <form class="card w-full max-w-md space-y-4 p-4 sm:p-5" (submit)="save($event)">
       <h2 class="font-semibold text-gray-900">Change password</h2>
       <div>
         <label class="label" for="a-cur">Current password</label>
@@ -24,8 +25,8 @@ const MIN_PASSWORD = 8;
       <div>
         <label class="label" for="a-new">New password</label>
         <div class="relative">
-          <input id="a-new" name="next" [type]="show() ? 'text' : 'password'" autocomplete="new-password" class="input !pr-10" [(ngModel)]="next" required />
-          <button type="button" class="icon-btn absolute right-1 top-1/2 -translate-y-1/2" (click)="show.set(!show())"
+          <input id="a-new" name="next" [type]="show() ? 'text' : 'password'" autocomplete="new-password" class="input !pr-12" [(ngModel)]="next" required />
+          <button type="button" class="icon-btn absolute right-0 top-0 h-11 w-11" (click)="show.set(!show())"
                   [attr.aria-label]="show() ? 'Hide password' : 'Show password'">
             <app-icon [name]="show() ? 'eyeOff' : 'eye'" [size]="16" />
           </button>
@@ -33,9 +34,11 @@ const MIN_PASSWORD = 8;
         <p class="mt-1 text-xs text-gray-500">At least {{ minPassword }} characters.</p>
       </div>
       @if (error()) { <p class="rounded bg-red-50 p-2 text-sm text-red-700" role="alert">{{ error() }}</p> }
-      <button type="submit" class="btn-primary" [disabled]="saving()">
-        @if (saving()) { Updating… } @else { Update password }
-      </button>
+      <app-form-actions>
+        <button type="submit" class="btn-primary" [disabled]="saving()">
+          @if (saving()) { Updating… } @else { Update password }
+        </button>
+      </app-form-actions>
       <p class="text-xs text-gray-500">You will be signed out everywhere and asked to sign in again.</p>
     </form>
   `,

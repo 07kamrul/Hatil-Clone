@@ -20,51 +20,92 @@ const PAGE_SIZE = 25;
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-page-header title="Products" [subtitle]="subtitle()">
-      <div actions class="flex flex-wrap gap-2">
-        <label class="btn-outline cursor-pointer">{{ importing() ? 'Importing…' : 'Import CSV/Excel' }}
-          <input type="file" accept=".csv,.xlsx" class="hidden" [disabled]="importing()" (change)="import($event)" /></label>
-        <button type="button" class="btn-outline" (click)="export('csv')">Export CSV</button>
-        <button type="button" class="btn-outline" (click)="export('xlsx')">Export Excel</button>
-        <a routerLink="new" class="btn-primary"><app-icon name="plus" [size]="16" /> New product</a>
+      <div actions class="flex w-full flex-wrap gap-2 sm:w-auto">
+        <label class="btn-outline flex-1 cursor-pointer focus-within:ring-2 focus-within:ring-brand/40 sm:flex-none">{{ importing() ? 'Importing…' : 'Import CSV/Excel' }}
+          <input type="file" accept=".csv,.xlsx" class="sr-only" [disabled]="importing()" (change)="import($event)" /></label>
+        <button type="button" class="btn-outline flex-1 sm:flex-none" (click)="export('csv')">Export CSV</button>
+        <button type="button" class="btn-outline flex-1 sm:flex-none" (click)="export('xlsx')">Export Excel</button>
+        <a routerLink="new" class="btn-primary w-full sm:w-auto"><app-icon name="plus" [size]="16" /> New product</a>
       </div>
     </app-page-header>
 
     @if (importResult(); as r) {
-      <div class="mb-4 rounded-md border bg-white p-3 text-sm">
+      <div class="mb-4 rounded-md border bg-white p-3 text-sm" role="status">
         <strong>Import finished:</strong> {{ r.created }} created, {{ r.updated }} updated, {{ r.failed }} failed.
         @if (r.errors.length) { <ul class="mt-2 max-h-40 list-disc overflow-auto pl-5 text-red-700">@for (e of r.errors; track $index) { <li>{{ e }}</li> }</ul> }
-        <button type="button" class="mt-2 text-xs underline" (click)="importResult.set(null)">Dismiss</button>
+        <button type="button" class="mt-2 inline-flex min-h-11 items-center text-xs underline" (click)="importResult.set(null)">Dismiss</button>
       </div>
     }
 
     <div class="mb-3 flex flex-wrap gap-2">
-      <input type="search" class="input max-w-xs" placeholder="Search name or SKU…" [ngModel]="q()" (ngModelChange)="q.set($event); page.set(1)" aria-label="Search products" />
-      <select class="input !w-auto" [ngModel]="published()" (ngModelChange)="published.set($event); page.set(1)" aria-label="Publish state">
+      <input type="search" class="input w-full sm:max-w-xs" placeholder="Search name or SKU…" [ngModel]="q()" (ngModelChange)="q.set($event); page.set(1)" aria-label="Search products" />
+      <select class="input min-w-0 flex-1 sm:!w-auto sm:flex-none" [ngModel]="published()" (ngModelChange)="published.set($event); page.set(1)" aria-label="Publish state">
         <option value="">All</option><option value="true">Published</option><option value="false">Unpublished</option>
       </select>
-      <select class="input !w-auto" [ngModel]="sort()" (ngModelChange)="sort.set($event)" aria-label="Sort">
+      <select class="input min-w-0 flex-1 sm:!w-auto sm:flex-none" [ngModel]="sort()" (ngModelChange)="sort.set($event)" aria-label="Sort">
         <option value="new">Newest</option><option value="name">Name</option><option value="price_asc">Price ↑</option><option value="price_desc">Price ↓</option><option value="popular">Most viewed</option>
       </select>
     </div>
 
     @if (selected().size) {
-      <div class="mb-3 flex flex-wrap items-center gap-2 rounded-md bg-brand/10 p-3 text-sm">
+      <div class="mb-3 flex flex-wrap items-center gap-2 rounded-md bg-brand/10 p-3 text-sm" role="region" aria-label="Bulk actions">
         <strong>{{ selected().size }} selected</strong>
-        <button type="button" class="btn-outline !py-1" (click)="publish(true)">Publish</button>
-        <button type="button" class="btn-outline !py-1" (click)="publish(false)">Unpublish</button>
-        <span class="mx-1 text-gray-400">|</span>
-        <select class="input !w-auto !py-1" [(ngModel)]="priceMode"><option value="percent">Change price by %</option><option value="fixed">Change price by amount</option><option value="set">Set price to</option></select>
-        <select class="input !w-auto !py-1" [(ngModel)]="priceTarget"><option value="price">Regular price</option><option value="sale_price">Sale price</option></select>
-        <input type="number" class="input !w-28 !py-1" [(ngModel)]="priceValue" placeholder="e.g. 10" aria-label="Value" />
-        <label class="flex items-center gap-1">round to <input type="number" min="0" class="input !w-20 !py-1" [(ngModel)]="roundTo" /></label>
-        <button type="button" class="btn-primary !py-1" (click)="bulkPrice()">Apply</button>
-        <span class="mx-1 text-gray-400">|</span>
-        <button type="button" class="btn-danger !py-1" (click)="bulkDelete()">Delete</button>
-        <button type="button" class="ml-auto text-xs underline" (click)="clearSelection()">Clear selection</button>
+        <button type="button" class="btn-outline" (click)="publish(true)">Publish</button>
+        <button type="button" class="btn-outline" (click)="publish(false)">Unpublish</button>
+        <span class="mx-1 hidden text-gray-400 sm:inline">|</span>
+        <select class="input w-full sm:!w-auto" [(ngModel)]="priceMode"><option value="percent">Change price by %</option><option value="fixed">Change price by amount</option><option value="set">Set price to</option></select>
+        <select class="input !w-auto" [(ngModel)]="priceTarget"><option value="price">Regular price</option><option value="sale_price">Sale price</option></select>
+        <input type="number" class="input !w-28" [(ngModel)]="priceValue" placeholder="e.g. 10" aria-label="Value" />
+        <label class="flex items-center gap-1">round to <input type="number" min="0" class="input !w-20" [(ngModel)]="roundTo" /></label>
+        <button type="button" class="btn-primary" (click)="bulkPrice()">Apply</button>
+        <span class="mx-1 hidden text-gray-400 sm:inline">|</span>
+        <button type="button" class="btn-danger" (click)="bulkDelete()">Delete</button>
+        <button type="button" class="ml-auto inline-flex min-h-11 items-center text-xs underline" (click)="clearSelection()">Clear selection</button>
       </div>
     }
 
-    <div class="overflow-hidden rounded-lg border bg-white">
+    @if (products.isLoading() && !products.value()) {
+      <div class="card divide-y" aria-busy="true" aria-label="Loading products">
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div class="flex items-center gap-3 p-4"><div class="skeleton h-12 w-12"></div>
+            <div class="flex-1 space-y-2"><div class="skeleton h-3 w-1/2"></div><div class="skeleton h-3 w-1/4"></div></div></div>
+        }
+      </div>
+    } @else if (products.error()) {
+      <div class="empty-state" role="alert"><p class="text-red-600">Could not load products.</p>
+        <button type="button" class="btn-outline" (click)="products.reload()">Retry</button></div>
+    } @else if (!products.value()?.items?.length) {
+      <div class="empty-state"><app-icon name="tag" [size]="32" /><p>No products found.</p>
+        <a routerLink="new" class="btn-primary"><app-icon name="plus" [size]="16" /> New product</a></div>
+    } @else {
+    <!-- Mobile cards -->
+    <ul class="space-y-3 md:hidden">
+      <li class="flex min-h-11 items-center gap-2 px-1 text-sm">
+        <input id="p-all-m" type="checkbox" class="h-5 w-5" [checked]="allSelected()" (change)="toggleAll()" />
+        <label for="p-all-m">Select all on page</label>
+      </li>
+      @for (p of products.value()?.items; track p.id) {
+        <li class="card flex gap-3 p-3" [class.ring-2]="selected().has(p.id)" [class.ring-brand]="selected().has(p.id)">
+          <label class="-m-1 flex h-11 w-11 shrink-0 items-center justify-center">
+            <input type="checkbox" class="h-5 w-5" [checked]="selected().has(p.id)" (change)="toggle(p.id)" [attr.aria-label]="'Select ' + p.name" />
+          </label>
+          @if (p.image) { <img [src]="p.image" alt="" class="h-16 w-16 shrink-0 rounded object-cover" /> }
+          <div class="min-w-0 flex-1">
+            <a [routerLink]="[p.id]" class="block break-words font-medium text-gray-900 hover:text-brand">{{ p.name }}</a>
+            <p class="truncate text-xs text-gray-500">{{ p.sku }}@if (p.category?.name) { · {{ p.category?.name }} }</p>
+            <p class="mt-1 text-sm">{{ p.final_price | money }}@if (p.sale_price !== null) { <span class="ml-1 text-xs text-gray-400 line-through">{{ p.price | money }}</span> }</p>
+            <div class="mt-2 flex flex-wrap gap-1.5 text-xs">
+              @if (p.is_published) { <app-badge tone="green">Published</app-badge> } @else { <app-badge tone="gray">Hidden</app-badge> }
+              @if (p.is_featured) { <app-badge tone="amber">Featured</app-badge> }
+              <span class="text-gray-500">{{ stock[p.stock_status] }} · {{ p.view_count }} views</span>
+            </div>
+          </div>
+          <a [routerLink]="[p.id]" class="icon-btn h-11 w-11 shrink-0 self-start" [attr.aria-label]="'Edit ' + p.name"><app-icon name="pencil" [size]="16" /></a>
+        </li>
+      }
+    </ul>
+    <!-- Desktop table -->
+    <div class="table-wrap hidden rounded-lg border bg-white md:block">
       <table class="table-admin">
         <thead>
           <tr>
@@ -78,7 +119,7 @@ const PAGE_SIZE = 25;
             <tr>
               <td><input type="checkbox" [checked]="selected().has(p.id)" (change)="toggle(p.id)" [attr.aria-label]="'Select ' + p.name" /></td>
               <td>@if (p.image) { <img [src]="p.image" alt="" class="h-10 w-10 rounded object-cover" /> }</td>
-              <td><a [routerLink]="[p.id]" class="font-medium hover:text-brand">{{ p.name }}</a>
+              <td class="min-w-48"><a [routerLink]="[p.id]" class="font-medium hover:text-brand">{{ p.name }}</a>
                 @if (p.is_featured) { <app-badge tone="amber" class="ml-1">Featured</app-badge> }</td>
               <td class="text-gray-600">{{ p.sku }}</td>
               <td class="text-gray-600">{{ p.category?.name }}</td>
@@ -87,14 +128,13 @@ const PAGE_SIZE = 25;
               <td>@if (p.is_published) { <app-badge tone="green">Published</app-badge> } @else { <app-badge tone="gray">Hidden</app-badge> }</td>
               <td class="text-gray-600">{{ p.view_count }}</td>
             </tr>
-          } @empty {
-            <tr><td colspan="9" class="px-3 py-8 text-center text-gray-500">{{ products.isLoading() ? 'Loading…' : 'No products found.' }}</td></tr>
           }
         </tbody>
       </table>
     </div>
+    }
     @if (products.value(); as r) {
-      <div class="mt-4 flex items-center gap-3 text-sm">
+      <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
         <span class="text-gray-600">{{ r.total }} products</span>
         @if (r.pages > 1) {
           <button type="button" class="btn-outline" [disabled]="page() <= 1" (click)="page.set(page() - 1)">Prev</button>

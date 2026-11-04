@@ -22,16 +22,16 @@ const MIN_QUERY = 2;
     <form (submit)="submit($event)" role="search" class="flex">
       <input type="search" name="q" [ngModel]="query()" (ngModelChange)="onInput($event)" (focus)="open.set(true)"
              (keydown.escape)="open.set(false)" placeholder="Search furniture, e.g. sofa, bed, table…"
-             aria-label="Search products" autocomplete="off" class="input rounded-r-none" />
-      <button type="submit" aria-label="Search" class="rounded-r-md bg-brand px-3 text-white hover:bg-brand-dark">
+             aria-label="Search products" autocomplete="off" class="input min-w-0 rounded-r-none" />
+      <button type="submit" aria-label="Search" class="min-h-11 min-w-11 rounded-r-md bg-brand px-3 text-white hover:bg-brand-dark focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none">
         <app-icon name="search" />
       </button>
     </form>
     @if (open() && suggestions().length) {
-      <ul class="absolute left-0 right-0 top-full z-50 mt-1 max-h-96 overflow-auto rounded-md border bg-white shadow-lg">
+      <ul class="absolute left-0 right-0 top-full z-50 mt-1 max-h-[60dvh] overflow-auto overscroll-contain rounded-md border border-gray-200 bg-white shadow-lg">
         @for (s of suggestions(); track s.type + s.slug) {
           <li>
-            <a [routerLink]="link(s)" (click)="close()" class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50">
+            <a [routerLink]="link(s)" (click)="close()" class="flex min-h-12 items-center gap-3 px-3 py-2 hover:bg-gray-50 focus-visible:bg-gray-50 focus-visible:outline-none">
               @if (s.image) {
                 <img [ngSrc]="s.image" [alt]="s.name" width="40" height="40" class="h-10 w-10 rounded object-cover" />
               } @else {
@@ -39,10 +39,10 @@ const MIN_QUERY = 2;
                   {{ s.type === 'category' ? 'Cat' : '—' }}
                 </span>
               }
-              <span class="flex-1 text-sm">{{ s.name }}
+              <span class="min-w-0 flex-1 truncate text-sm">{{ s.name }}
                 @if (s.type === 'category') { <span class="ml-1 text-xs text-gray-500">in categories</span> }
               </span>
-              @if (s.price !== null) { <span class="text-sm font-medium text-brand">{{ s.price | money }}</span> }
+              @if (s.price !== null) { <span class="shrink-0 text-sm font-medium text-brand">{{ s.price | money }}</span> }
             </a>
           </li>
         }

@@ -33,7 +33,7 @@ const SWIPE_MIN_PX = 50;
             } @else {
               <div class="absolute inset-0 bg-black/45"></div>
               <div class="absolute inset-0 flex items-center">
-                <div class="mx-auto w-full max-w-6xl px-6 text-white sm:px-10">
+                <div class="mx-auto w-full max-w-6xl px-5 text-white sm:px-10">
                   <h2 class="hero-title">
                     <span>{{ b.title }}</span><span class="hero-line hidden md:inline-block"></span>
                   </h2>
@@ -44,7 +44,7 @@ const SWIPE_MIN_PX = 50;
                   }
                   @if (b.link_url) {
                     <a [routerLink]="b.link_url" [attr.tabindex]="i === slide() ? 0 : -1"
-                       class="mt-8 inline-flex items-center gap-2 border border-white/80 px-7 py-3 text-sm font-medium uppercase tracking-[.2em] transition hover:bg-white hover:text-gray-900">
+                       class="mt-6 inline-flex min-h-11 items-center gap-2 border border-white/80 px-6 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:mt-8 sm:px-7 text-sm font-medium uppercase tracking-[.2em] transition hover:bg-white hover:text-gray-900">
                       {{ b.button_text || 'Explore' }}</a>
                   }
                 </div>
@@ -55,13 +55,13 @@ const SWIPE_MIN_PX = 50;
       </div>
       @if (slides().length > 1) {
         <button type="button" (click)="prev()" aria-label="Previous slide"
-                class="hero-arrow left-4 opacity-0 group-hover:opacity-100 focus-visible:opacity-100">&#8249;</button>
+                class="hero-arrow left-4 hidden opacity-0 md:flex group-hover:opacity-100 focus-visible:opacity-100">&#8249;</button>
         <button type="button" (click)="next()" aria-label="Next slide"
-                class="hero-arrow right-4 opacity-0 group-hover:opacity-100 focus-visible:opacity-100">&#8250;</button>
-        <div class="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 gap-1">
+                class="hero-arrow right-4 hidden opacity-0 md:flex group-hover:opacity-100 focus-visible:opacity-100">&#8250;</button>
+        <div class="absolute bottom-3 left-1/2 z-10 flex max-w-full -translate-x-1/2 sm:bottom-6">
           @for (b of slides(); track b.id; let i = $index) {
             <button type="button" (click)="go(i)" [attr.aria-label]="'Show slide ' + (i + 1)"
-                    [attr.aria-current]="i === slide()" class="flex h-7 w-7 items-center justify-center">
+                    [attr.aria-current]="i === slide()" class="flex h-11 w-8 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-white">
               <span class="rounded-full transition-all" [class]="i === slide() ? 'h-3.5 w-3.5 bg-white' : 'h-3 w-3 bg-white/40'"></span>
             </button>
           }
@@ -70,13 +70,15 @@ const SWIPE_MIN_PX = 50;
     </section>
   `,
   styles: `
-    .hero { height: calc(100svh - var(--header-h, 88px)); min-height: 460px; max-height: 1000px; }
+    .hero { height: min(calc(100svh - var(--header-h, 88px)), 75vw + 12rem); min-height: 360px; max-height: 1000px; }
+    @media (min-width: 768px) { .hero { height: calc(100svh - var(--header-h, 88px)); min-height: 460px; } }
     .hero-title { display: flex; align-items: center; gap: 1.5rem; font-weight: 700; line-height: 1.05;
-      font-size: clamp(2.5rem, 6.5vw, 6rem); letter-spacing: -.01em; }
-    .hero-sub { display: flex; align-items: center; justify-content: flex-end; gap: 1.5rem; font-weight: 300;
-      font-size: clamp(1.6rem, 4.5vw, 4.25rem); line-height: 1.1; }
+      font-size: clamp(2rem, 6.5vw, 6rem); letter-spacing: -.01em; overflow-wrap: anywhere; }
+    .hero-sub { display: flex; align-items: center; justify-content: flex-start; gap: 1.5rem; font-weight: 300;
+      font-size: clamp(1.25rem, 4.5vw, 4.25rem); line-height: 1.1; }
+    @media (min-width: 768px) { .hero-sub { justify-content: flex-end; } }
     .hero-line { flex: 0 0 auto; width: clamp(6rem, 14vw, 15rem); height: 1px; background: rgba(255,255,255,.85); }
-    .hero-arrow { position: absolute; top: 50%; z-index: 10; transform: translateY(-50%); display: flex; width: 3rem; height: 3rem;
+    .hero-arrow { position: absolute; top: 50%; z-index: 10; transform: translateY(-50%); width: 3rem; height: 3rem;
       align-items: center; justify-content: center; border-radius: 9999px; background: rgba(0,0,0,.35); color: #fff;
       font-size: 2rem; line-height: 1; transition: opacity .3s, background .3s; }
     .hero-arrow:hover { background: rgba(0,0,0,.6); }

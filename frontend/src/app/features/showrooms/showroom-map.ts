@@ -1,5 +1,5 @@
 import {
-  ChangeDetectionStrategy, Component, ElementRef, afterNextRender, effect, input, output, signal, viewChild,
+  ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject, afterNextRender, effect, input, output, signal, viewChild,
 } from '@angular/core';
 import type * as L from 'leaflet';
 
@@ -17,11 +17,11 @@ const ATTRIBUTION = '&copy; OpenStreetMap contributors';
   selector: 'app-showroom-map',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div #host class="h-full min-h-[320px] w-full rounded-lg bg-gray-100" role="region" aria-label="Showroom map"></div>
+    <div #host class="h-full min-h-[280px] w-full overflow-hidden rounded-lg bg-gray-100" role="region" aria-label="Showroom map"></div>
     @if (failed()) {
-      <div class="mt-2 flex items-center gap-3 text-sm text-gray-500">
+      <div class="mt-2 flex items-center gap-3 text-sm text-gray-500" role="alert">
         The map could not be loaded.
-        <button type="button" class="text-xs font-medium underline hover:text-gray-900" (click)="retry()">Retry</button>
+        <button type="button" class="inline-flex min-h-11 items-center px-2 text-xs font-medium underline hover:text-gray-900" (click)="retry()">Retry</button>
       </div>
     }
   `,
@@ -39,9 +39,21 @@ export class ShowroomMap {
   private map: L.Map | null = null;
   private layer: L.LayerGroup | null = null;
   private markers = new Map<number, L.Marker>();
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor() {
-    afterNextRender(() => void this.init());
+    afterNextRender(() => {
+      void this.init();
+      // The map may start hidden (mobile list/map toggle); re-measure whenever the box changes size.
+      if (typeof ResizeObserver !== 'undefined') {
+        this.resizeObserver = new ResizeObserver(() => this.map?.invalidateSize());
+        this.resizeObserver.observe(this.host().nativeElement);
+      }
+    });
+    inject(DestroyRef).onDestroy(() => {
+      this.resizeObserver?.disconnect();
+      this.map?.remove();
+    });
 
     effect(() => {
       if (this.ready()) this.renderMarkers(this.showrooms());
@@ -63,6 +75,7 @@ export class ShowroomMap {
 
   private async init(): Promise<void> {
     try {
+      this.failed.set(false);
       this.map?.remove(); // a retry must not stack a second map on the same container
       this.map = null;
       this.layer = null;
