@@ -1,7 +1,9 @@
 import {
-  ChangeDetectionStrategy, Component, ElementRef, effect, forwardRef, signal, untracked, viewChild,
+  ChangeDetectionStrategy, Component, ElementRef, effect, forwardRef, inject, signal, untracked, viewChild,
 } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+
+import { Dialog } from '../../../core/dialog';
 
 interface ToolbarButton { label: string; title: string; command: string; arg?: string }
 
@@ -44,6 +46,7 @@ const TOOLBAR: ToolbarButton[] = [
   `,
 })
 export class HtmlEditor implements ControlValueAccessor {
+  private readonly dialog = inject(Dialog);
   protected readonly toolbar = TOOLBAR;
   protected readonly source = signal(false);
   protected readonly html = signal('');
@@ -85,10 +88,13 @@ export class HtmlEditor implements ControlValueAccessor {
     this.onInput();
   }
 
-  protected link(): void {
-    const url = prompt('Link URL (https://…)');
-    if (url && /^(https?:|mailto:|tel:|\/)/i.test(url)) {
-      document.execCommand('createLink', false, url);
+  protected async link(): Promise<void> {
+    const url = await this.dialog.prompt('Insert link', {
+      placeholder: 'https://…',
+      validate: (v) => (/^(https?:\/\/|mailto:|tel:|\/)\S+$/i.test(v.trim()) ? '' : 'Enter a valid URL (https://…, mailto:, tel: or /path)'),
+    });
+    if (url) {
+      document.execCommand('createLink', false, url.trim());
       this.onInput();
     }
   }

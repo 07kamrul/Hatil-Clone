@@ -8,7 +8,7 @@ import { Toast } from '../../../core/toast';
 import { Icon } from '../../../shared/ui/icon';
 import { AdminApi, Row, apiError } from '../core/admin-api';
 import { Badge } from '../ui/badge';
-import { ConfirmService } from '../ui/confirm-dialog';
+import { Dialog } from '../../../core/dialog';
 import { PageHeader } from '../ui/page-header';
 import { RESOURCES } from './resource-config';
 
@@ -87,7 +87,7 @@ export class ResourceList {
   readonly resource = input.required<string>();
   private readonly api = inject(AdminApi);
   private readonly toast = inject(Toast);
-  private readonly confirmDialog = inject(ConfirmService);
+  private readonly dialog = inject(Dialog);
 
   protected readonly def = computed(() => RESOURCES[this.resource()]);
   protected readonly q = signal('');
@@ -100,7 +100,7 @@ export class ResourceList {
 
   protected async remove(row: Row): Promise<void> {
     const label = String(row['name'] ?? row['title'] ?? row['question'] ?? `#${row.id}`);
-    const ok = await this.confirmDialog.confirm('Delete item', `Delete "${label}"? This cannot be undone.`, { confirmLabel: 'Delete', danger: true });
+    const ok = await this.dialog.confirm('Delete item', `Delete "${label}"? This cannot be undone.`, { confirmLabel: 'Delete', kind: 'danger' });
     if (!ok) return;
     this.api.remove(this.def().api, row.id).subscribe({
       next: () => {

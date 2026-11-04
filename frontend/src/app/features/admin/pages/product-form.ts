@@ -6,6 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of } from 'rxjs';
 
 import { Color, Material, ProductDetail, ProductImage, Room, StockStatus } from '../../../core/models';
+import { Dialog } from '../../../core/dialog';
 import { Toast } from '../../../core/toast';
 import { AdminApi, apiError } from '../core/admin-api';
 import { HtmlEditor } from '../ui/html-editor';
@@ -186,6 +187,7 @@ export class AdminProductForm {
   readonly id = input<string>('new');
   private readonly api = inject(AdminApi);
   private readonly router = inject(Router);
+  private readonly dialog = inject(Dialog);
   private readonly toast = inject(Toast);
 
   protected readonly stockOptions = [
@@ -280,8 +282,8 @@ export class AdminProductForm {
     });
   }
 
-  protected remove(): void {
-    if (!confirm('Delete this product and its images? This cannot be undone.')) return;
+  protected async remove(): Promise<void> {
+    if (!(await this.dialog.confirm('Delete product', 'Delete this product and its images? This cannot be undone.', { confirmLabel: 'Delete', kind: 'danger' }))) return;
     this.api.remove('products', Number(this.id())).subscribe({
       next: () => {
         this.toast.show('Product deleted');
@@ -332,8 +334,8 @@ export class AdminProductForm {
     });
   }
 
-  protected deleteImage(img: ProductImage): void {
-    if (!confirm('Remove this image?')) return;
+  protected async deleteImage(img: ProductImage): Promise<void> {
+    if (!(await this.dialog.confirm('Remove image', 'Remove this image from the product?', { confirmLabel: 'Remove', kind: 'warning' }))) return;
     this.api.deleteImage(Number(this.id()), img.id).subscribe({
       next: (p) => this.images.set(p.images), error: (e: unknown) => this.toast.error(apiError(e)),
     });

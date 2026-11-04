@@ -7,7 +7,7 @@ import { Toast } from '../../../core/toast';
 import { MoneyPipe } from '../../../shared/ui/money-pipe';
 import { AdminApi, apiError } from '../core/admin-api';
 import { Badge } from '../ui/badge';
-import { ConfirmService } from '../ui/confirm-dialog';
+import { Dialog } from '../../../core/dialog';
 import { PageHeader } from '../ui/page-header';
 
 const PAGE_SIZE = 20;
@@ -74,7 +74,7 @@ interface ContactMessage { id: number; name: string; email: string | null; phone
 export class AdminInquiries {
   private readonly api = inject(AdminApi);
   private readonly toast = inject(Toast);
-  private readonly confirmDialog = inject(ConfirmService);
+  private readonly dialog = inject(Dialog);
   protected readonly status = signal('');
   protected readonly q = signal('');
   protected readonly page = signal(1);
@@ -88,7 +88,7 @@ export class AdminInquiries {
   }
 
   protected async remove(id: number): Promise<void> {
-    const ok = await this.confirmDialog.confirm('Delete inquiry', 'Delete this inquiry? This cannot be undone.', { confirmLabel: 'Delete', danger: true });
+    const ok = await this.dialog.confirm('Delete inquiry', 'Delete this inquiry? This cannot be undone.', { confirmLabel: 'Delete', kind: 'danger' });
     if (!ok) return;
     this.api.remove('inquiries', id).subscribe({ next: () => this.rows.reload(), error: (e: unknown) => this.toast.error(apiError(e)) });
   }
@@ -137,7 +137,7 @@ export class AdminInquiries {
 export class AdminMessages {
   private readonly api = inject(AdminApi);
   private readonly toast = inject(Toast);
-  private readonly confirmDialog = inject(ConfirmService);
+  private readonly dialog = inject(Dialog);
   protected readonly filter = signal('');
   protected readonly q = signal('');
   protected readonly page = signal(1);
@@ -151,7 +151,7 @@ export class AdminMessages {
   }
 
   protected async remove(id: number): Promise<void> {
-    const ok = await this.confirmDialog.confirm('Delete message', 'Delete this message? This cannot be undone.', { confirmLabel: 'Delete', danger: true });
+    const ok = await this.dialog.confirm('Delete message', 'Delete this message? This cannot be undone.', { confirmLabel: 'Delete', kind: 'danger' });
     if (!ok) return;
     this.api.remove('contact-messages', id).subscribe({ next: () => this.rows.reload(), error: (e: unknown) => this.toast.error(apiError(e)) });
   }

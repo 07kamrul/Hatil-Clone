@@ -4,6 +4,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { CategoryNode } from '../../../core/models';
+import { Dialog } from '../../../core/dialog';
 import { Toast } from '../../../core/toast';
 import { AdminApi, apiError } from '../core/admin-api';
 import { HtmlEditor } from '../ui/html-editor';
@@ -90,6 +91,7 @@ export function flattenTree(nodes: CategoryNode[], exclude: number | null, depth
 })
 export class AdminCategories {
   private readonly api = inject(AdminApi);
+  private readonly dialog = inject(Dialog);
   private readonly toast = inject(Toast);
 
   protected readonly tree = rxResource({ stream: () => this.api.all<CategoryNode>('categories/tree') });
@@ -138,8 +140,8 @@ export class AdminCategories {
     });
   }
 
-  protected remove(id: number): void {
-    if (!confirm('Delete this category? Its subcategories move up one level.')) return;
+  protected async remove(id: number): Promise<void> {
+    if (!(await this.dialog.confirm('Delete category', 'Delete this category? Its subcategories move up one level.', { confirmLabel: 'Delete', kind: 'danger' }))) return;
     this.api.remove('categories', id).subscribe({
       next: () => {
         this.toast.show('Category deleted');

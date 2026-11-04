@@ -6,6 +6,10 @@
   --color-brand-dark: var(--brand-primary-dark, #6b4420);
   --color-accent: var(--brand-accent, #1f2937);
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --animate-dialog-backdrop: dialog-backdrop 150ms ease-out;
+  --animate-dialog-panel: dialog-panel 180ms ease-out;
+  @keyframes dialog-backdrop { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes dialog-panel { from { opacity: 0; transform: translateY(16px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 }
 
 html { scroll-behavior: smooth; }

@@ -10,7 +10,7 @@ import { AdminAuth, AdminUser } from '../core/admin-auth';
 import { Badge } from '../ui/badge';
 import { PageHeader } from '../ui/page-header';
 import { SidePanel } from '../ui/side-panel';
-import { ConfirmService } from '../ui/confirm-dialog';
+import { Dialog } from '../../../core/dialog';
 
 interface UserForm { id: number | null; email: string; full_name: string; password: string; role: 'admin' | 'super_admin'; is_active: boolean }
 const MIN_PASSWORD = 8;
@@ -204,7 +204,7 @@ export function initials(nameOrEmail: string): string {
 export class AdminUsers {
   private readonly api = inject(AdminApi);
   private readonly toast = inject(Toast);
-  private readonly confirmDialog = inject(ConfirmService);
+  private readonly dialog = inject(Dialog);
   protected readonly auth = inject(AdminAuth);
   protected readonly minPassword = MIN_PASSWORD;
   protected readonly initials = initials;
@@ -282,7 +282,7 @@ export class AdminUsers {
   }
 
   protected async remove(u: AdminUser): Promise<void> {
-    const ok = await this.confirmDialog.confirm('Delete admin', `Delete ${u.email}? This cannot be undone.`, { confirmLabel: 'Delete', danger: true });
+    const ok = await this.dialog.confirm('Delete admin', `Delete ${u.email}? This cannot be undone.`, { confirmLabel: 'Delete', kind: 'danger' });
     if (!ok) return;
     this.api.remove('users', u.id).subscribe({ next: () => this.users.reload(), error: (e: unknown) => this.toast.error(apiError(e)) });
   }

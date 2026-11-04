@@ -9,7 +9,7 @@ import { Icon } from '../../../shared/ui/icon';
 import { MoneyPipe } from '../../../shared/ui/money-pipe';
 import { AdminApi, ImportResult, apiError, downloadBlob } from '../core/admin-api';
 import { Badge } from '../ui/badge';
-import { ConfirmService } from '../ui/confirm-dialog';
+import { Dialog } from '../../../core/dialog';
 import { PageHeader } from '../ui/page-header';
 
 const PAGE_SIZE = 25;
@@ -108,7 +108,7 @@ const PAGE_SIZE = 25;
 export class AdminProducts {
   private readonly api = inject(AdminApi);
   private readonly toast = inject(Toast);
-  private readonly confirmDialog = inject(ConfirmService);
+  private readonly dialog = inject(Dialog);
 
   protected readonly stock = STOCK_LABELS;
   protected readonly q = signal('');
@@ -180,10 +180,10 @@ export class AdminProducts {
   }
 
   protected async bulkDelete(): Promise<void> {
-    const ok = await this.confirmDialog.confirm(
+    const ok = await this.dialog.confirm(
       'Delete products',
       `Delete ${this.selected().size} products and their images? This cannot be undone.`,
-      { confirmLabel: 'Delete', danger: true },
+      { confirmLabel: 'Delete', kind: 'danger' },
     );
     if (!ok) return;
     this.api.bulkDelete([...this.selected()]).subscribe({ next: (r) => this.done(r.detail), error: (e: unknown) => this.toast.error(apiError(e)) });

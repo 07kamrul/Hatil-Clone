@@ -7,7 +7,6 @@ import { Seo } from '../../../core/seo';
 import { SettingsStore } from '../../../core/settings-store';
 import { Icon } from '../../../shared/ui/icon';
 import { AdminAuth } from '../core/admin-auth';
-import { ConfirmDialog } from '../ui/confirm-dialog';
 import { BrowserStorage } from '../../../core/browser-storage';
 
 interface NavItem { path: string; label: string; icon: string; superOnly?: boolean }
@@ -32,7 +31,7 @@ const COLLAPSE_KEY = 'admin.sidebar-collapsed';
 
 @Component({
   selector: 'app-admin-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, ConfirmDialog],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:keydown.escape)': 'open.set(false)' },
   template: `
@@ -133,7 +132,6 @@ const COLLAPSE_KEY = 'admin.sidebar-collapsed';
         <main class="flex-1 p-4 sm:p-6"><router-outlet /></main>
       </div>
     </div>
-    <app-confirm-dialog />
   `,
 })
 export class AdminLayout {
