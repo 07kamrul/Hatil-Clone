@@ -134,6 +134,11 @@ def _resolve(value: Any, refs: dict[str, str]) -> Any:
     return value
 
 
+def _title_text(html: str) -> str:
+    match = re.search(r"<title[^>]*>([^<]*)</title>", html, re.I)
+    return match.group(1).strip() if match else ""
+
+
 # ---------- Product ----------
 def parse_product(html: str, url: str) -> ScrapedProduct:
     flight = extract_flight(html)
@@ -148,6 +153,14 @@ def parse_product(html: str, url: str) -> ScrapedProduct:
     if isinstance(details, dict) and (details.get("SofaSetInfo") or details.get("SetType")):
         return _from_set_details(details, find_json(flight, "productServiceInfoModel") or [],
                                  text_rows(flight), url)
+    # Next.js App Router pages: every real product page embeds productDetails, every other page
+    # (rendered 404 boundary, category listing) carries none. Without ld+json either, the DOM
+    # fallback can only misread listings as price-less products — skip instead of failing forever.
+    if 'application/ld+json' not in html:
+        title = _title_text(html)
+        if not title:
+            raise SkipProduct(f"Not found on source (soft 404, no title): {url}")
+        raise SkipProduct(f"Not a product page (no product data): {url}")
     return parse_product_dom(html, url)
 
 

@@ -105,6 +105,26 @@ def test_extract_product_links_dedupes_and_stays_on_host() -> None:
         "https://shop.example.com/sofa-price-in-bangladesh?page=2"
 
 
+SOFT_404_FLIGHT = (
+    # Rendered not-found boundary as seen on hatil.com dead product pages (e.g. /sofa/andaman-184-122-seat,
+    # verified 2026-11-04): HTTP 200, no <title>, flight carries nav categories + the boundary, no productDetails.
+    '2:[["$","h2",null,{"className":"mb-3","children":"404"}],'
+    '["$","h4",null,{"children":"Page Not Found"}],'
+    '["$","p",null,{"className":"my-3 text-center","children":"Could not find requested resource"}]]\n'
+)
+CATEGORY_FLIGHT = (
+    # Listing pages (e.g. /office-furniture-price-in-bangladesh) have a title and product links in the
+    # flight payload but no productDetails and no JSON-LD.
+    '1b:[["$","$L27",null,{"page":"others","categories":[{"name":"Living Room","se_name":"sofa"}]}]\n'
+)
+
+
+def _next_page(title: str | None, flight: str) -> str:
+    head = f"<head><title>{title}</title></head>" if title is not None else "<head></head>"
+    return (f"<html>{head}<body>"
+            f"<script>self.__next_f.push([1,{json.dumps(flight)}])</script></body></html>")
+
+
 def test_source_404_page_is_skipped_not_failed() -> None:
     from scraper.parsers import SkipProduct
 
@@ -124,17 +144,32 @@ def test_rendered_404_page_with_stale_product_data_is_still_skipped() -> None:
         parse_product(html, "https://shop.example.com/Folding-Bed/capsicum-127")
 
 
+def test_soft404_page_without_title_is_skipped_not_failed() -> None:
+    """Dead hatil.com product URLs return HTTP 200 with a rendered 404 boundary and no <title>."""
+    from scraper.parsers import SkipProduct
+
+    html = _next_page(None, SOFT_404_FLIGHT)
+    with pytest.raises(SkipProduct, match="soft 404"):
+        parse_product(html, "https://hatil.com/sofa/andaman-184-122-seat")
+
+
+def test_listing_page_without_product_data_is_skipped_not_failed() -> None:
+    """A category listing reached via redirect has a title but no product data: skip, don't fail forever."""
+    from scraper.parsers import SkipProduct
+
+    html = _next_page("Office Furniture Price in Bangladesh 2026 | HATIL", CATEGORY_FLIGHT)
+    with pytest.raises(SkipProduct, match="Not a product page"):
+        parse_product(html, "https://hatil.com/interior-furniture/office")
+
+
 def test_live_page_with_embedded_not_found_boundary_is_not_skipped() -> None:
     """Regression: every live hatil.com page embeds the notFound boundary text in its flight payload
     (verified 2026-11-04 on /Bar-Stool/virgo-103, HTTP 200); that must not mark the product discontinued."""
-    from scraper.parsers import SkipProduct
-
     boundary = '9:[["$","title",null,{"children":"404: This page could not be found."}]]\n'
+    details = json.dumps({"productDetails": {"name": "Virgo-103", "sku": "V-103", "se_name": "virgo-103",
+                                             "product_price": {"price_value": 12500}}})
     html = ("<html><head><title>Virgo-103 Bar Stool Price in Bangladesh | HATIL</title></head><body>"
-            f"<script>self.__next_f.push([1,{json.dumps(boundary)}])</script></body></html>")
-    try:
-        parse_product(html, "https://shop.example.com/Bar-Stool/virgo-103")
-    except SkipProduct:
-        pytest.fail("live page with an embedded notFound boundary was classified as discontinued")
-    except Exception:  # noqa: BLE001 - no product data in this stub is fine; only the skip is under test
-        pass
+            f"<script>self.__next_f.push([1,{json.dumps(boundary)}])</script>"
+            f"<script>self.__next_f.push([1,{json.dumps('10:' + details + chr(10))}])</script></body></html>")
+    p = parse_product(html, "https://shop.example.com/Bar-Stool/virgo-103")
+    assert p.name == "Virgo-103"

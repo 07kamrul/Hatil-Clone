@@ -37,7 +37,7 @@ def make_transport(fail_once: set[str] | None = None) -> tuple[httpx.MockTranspo
         if url == f"{SITE}/sofa/testwood-101":
             return httpx.Response(200, text=product_html)
         if url == f"{SITE}/content/testwood-102":
-            return httpx.Response(200, text="<html><body>broken page</body></html>")
+            return httpx.Response(503)  # transient failure: must count as FAILED and be retried on resume
         if url.startswith("https://cdn.example.com/") and not url.endswith("robots.txt"):
             return httpx.Response(200, content=png_bytes("green"))
         return httpx.Response(404)
