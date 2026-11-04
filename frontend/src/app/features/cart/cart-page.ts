@@ -39,7 +39,7 @@ const CUSTOMER_KEY = 'checkout.customer.v1';
                   <a [routerLink]="['/product', line.slug]" class="font-medium hover:text-brand">{{ line.name }}</a>
                   <span class="text-xs text-gray-500">SKU: {{ line.sku }}</span>
                   @if (line.variant) { <span class="text-sm text-gray-600">{{ line.variant }}</span> }
-                  <span class="text-sm">{{ line.unitPrice | money }} each</span>
+                  <span class="text-sm">{{ line.unitPrice | money }}@if (line.unitPrice > 0) { each }</span>
                   <div class="mt-auto flex items-center gap-3">
                     <div class="flex items-center rounded-md border" role="group" [attr.aria-label]="'Quantity of ' + line.name">
                       <button type="button" class="p-1.5" (click)="cart.setQuantity(line.key, line.quantity - 1)" aria-label="Decrease"><app-icon name="minus" [size]="14" /></button>

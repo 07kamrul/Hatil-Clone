@@ -19,6 +19,7 @@ describe('whatsapp message builder', () => {
   it('formats money with thousands separators', () => {
     expect(formatMoney(45000, '৳')).toBe('৳45,000');
     expect(formatMoney(1234.6, '$')).toBe('$1,235');
+    expect(formatMoney(0, '$')).toBe('Price on request');
   });
 
   it('sums the cart', () => {

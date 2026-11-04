@@ -14,12 +14,20 @@ const SLIDE_MS = 6000;
   template: `
     <section class="hero relative overflow-hidden bg-neutral-900" aria-roledescription="carousel" aria-label="Featured collections">
       @for (b of slides(); track b.id; let i = $index) {
-        <div class="absolute inset-0 transition-opacity duration-1000" [class.opacity-0]="i !== slide()"
+        <div class="absolute inset-0 transition-opacity duration-1000" [class.opacity-0]="i !== slide()" [class.bg-[#fdf6e9]]="!b.title"
              [attr.aria-hidden]="i !== slide()" aria-roledescription="slide">
           @if (b.image) {
-            <img [ngSrc]="b.image" [alt]="b.title" fill [priority]="i === 0" sizes="100vw"
-                 class="object-cover transition-transform duration-[7000ms] ease-out" [class.scale-105]="i === slide()" />
+            <img [ngSrc]="b.image" [alt]="b.title || 'Featured'" fill [priority]="i === 0" sizes="100vw"
+                 class="transition-transform duration-[7000ms] ease-out" [class.object-cover]="!!b.title"
+                 [class.object-contain]="!b.title" [class.scale-105]="!!b.title && i === slide()" />
           }
+          @if (!b.title) {
+            <!-- Designed artwork (e.g. a Facebook cover) carries its own text: no overlay, the whole slide links. -->
+            @if (b.link_url) {
+              <a [routerLink]="b.link_url" [attr.tabindex]="i === slide() ? 0 : -1"
+                 [attr.aria-label]="b.button_text || 'Explore'" class="absolute inset-0"></a>
+            }
+          } @else {
           <div class="absolute inset-0 bg-black/45"></div>
           <div class="absolute inset-0 flex items-center">
             <div class="mx-auto w-full max-w-6xl px-6 text-white sm:px-10">
@@ -38,6 +46,7 @@ const SLIDE_MS = 6000;
               }
             </div>
           </div>
+          }
         </div>
       }
       @if (slides().length > 1) {

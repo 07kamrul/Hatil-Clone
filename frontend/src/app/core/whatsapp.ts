@@ -29,7 +29,11 @@ export interface MessageOptions {
 /** WhatsApp truncates very long prefilled messages in some clients; keep well under the practical limit. */
 export const MAX_MESSAGE_LENGTH = 3500;
 
+export const PRICE_ON_REQUEST = 'Price on request';
+
+/** Formats an amount; products without a published price (0) read "Price on request". */
 export function formatMoney(amount: number, symbol: string): string {
+  if (!(amount > 0)) return PRICE_ON_REQUEST;
   return `${symbol}${Math.round(amount).toLocaleString('en-US')}`;
 }
 

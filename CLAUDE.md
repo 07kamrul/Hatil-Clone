@@ -20,18 +20,18 @@ python -m venv .venv && .venv/Scripts/pip install -r requirements-dev.txt   # Wi
 export DATABASE_URL=sqlite:///dev.db UPLOAD_DIR=uploads                   # or a postgres URL
 .venv/Scripts/alembic upgrade head && .venv/Scripts/python -m scripts.seed --demo
 .venv/Scripts/python -m uvicorn app.main:app --port 8000                  # docs at /api/docs
-.venv/Scripts/python -m pytest -q          # 126 tests, SQLite in-memory
+.venv/Scripts/python -m pytest -q          # 211 tests, SQLite in-memory
 .venv/Scripts/ruff check app scripts tests
 .venv/Scripts/python -m scripts.scrape_all [--limit N] [--backup]        # one command: migrate + products + content + verify
 .venv/Scripts/python -m scripts.scraper run --all | --category sofa | --resume [--limit N]
-.venv/Scripts/python -m scripts.seed_company [--keep-existing]       # company info/images from fb_page/ (Sahat Al Ramlah)
+.venv/Scripts/python -m scripts.seed_company [--keep-existing]       # logo, hero banner, categories, products, posts, about from facebook/Facebook_files (Sahat Al Ramlah)
 .venv/Scripts/python -m scripts.scraper content --all | --showrooms | --banners | --pages | --blog [--limit N]
 
 # frontend (from frontend/)
 npm ci
 npx ng serve             # http://localhost:4200, proxies /api and /uploads to :8000 (proxy.conf.json)
 npx ng build             # SSR build -> dist/frontend
-npx ng test --watch=false   # vitest, 17 tests
+npx ng test --watch=false   # vitest, 46 tests
 ```
 Default admin: `admin@example.com` / `ChangeMe123!` (set by SUPER_ADMIN_* env vars).
 
