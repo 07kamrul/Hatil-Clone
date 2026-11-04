@@ -3,7 +3,8 @@
 #   1. wait for the database to accept connections
 #   2. apply migrations (alembic upgrade head)
 #   3. seed idempotently (super admin, settings, taxonomy; demo products when SEED_DEMO=true)
-#   4. start the API (any catalogue import runs in the background, never blocking the healthcheck)
+#   4. import the Sahat Al Ramlah Facebook page content + images once (COMPANY_IMPORT)
+#   5. start the API (any hatil.com catalogue scrape runs in the background, never blocking the healthcheck)
 # Any other command (e.g. `docker compose run --rm backend pytest`) runs after step 1 only.
 set -eu
 
@@ -63,12 +64,31 @@ seed() {
   fi
 }
 
+import_company() {
+  # COMPANY_IMPORT=auto (default): load the bundled Facebook page content (logo, banners, categories,
+  # products, posts, images) on the first deploy, then skip via DATA_DIR/company.done so admin edits survive
+  # redeploys. force: re-run and overwrite; off: never. It is local-only (no network) and takes seconds.
+  mode="${COMPANY_IMPORT:-auto}"
+  marker="${DATA_DIR:-/app/data}/company.done"
+  [ "$mode" = "off" ] && return 0
+  if [ "$mode" = "auto" ] && [ -s "$marker" ]; then
+    log "company content already imported ($(cat "$marker")); set COMPANY_IMPORT=force to re-run"
+    return 0
+  fi
+  log "importing company content from the Facebook page (COMPANY_IMPORT=$mode)"
+  if python -m scripts.seed_company; then
+    mkdir -p "$(dirname "$marker")" && date -u +%FT%TZ > "$marker"
+  else
+    log "WARNING: company import failed; the API will still start and the next deploy retries"
+  fi
+}
+
 start_catalog_import() {
-  # CATALOG_IMPORT=auto (default in deploy_import.sh) or full: runs in the background so the API starts and
+  # CATALOG_IMPORT=auto or full (default off: it scrapes hatil.com and would replace the company content): runs in the background so the API starts and
   # passes the Dokploy healthcheck immediately; see scripts/deploy_import.sh. The script takes its own
   # flock, backs the DB up, resumes or starts the scrape, verifies, and writes /app/data/import.done.
-  if [ "${CATALOG_IMPORT:-auto}" != "off" ]; then
-    log "catalog import requested (CATALOG_IMPORT=${CATALOG_IMPORT:-auto}); running in the background"
+  if [ "${CATALOG_IMPORT:-off}" != "off" ]; then
+    log "catalog import requested (CATALOG_IMPORT=${CATALOG_IMPORT}); running in the background"
     nohup bash scripts/deploy_import.sh &
   fi
 }
@@ -84,6 +104,7 @@ ensure_secrets
 if [ "$#" -eq 0 ] || [ "$1" = "serve" ]; then
   migrate
   seed
+  import_company
   start_catalog_import
   serve
 fi

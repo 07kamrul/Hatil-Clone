@@ -6,7 +6,7 @@ Previous showrooms, banners, FAQs, blog posts and products (e.g. scraped or demo
 unless --keep-existing is passed. Nothing is deleted.
 
 Usage:
-    python -m scripts.seed_company [--source ../facebook/Facebook_files] [--keep-existing]
+    python -m scripts.seed_company [--source seed_assets/sahat-al-ramlah] [--keep-existing]
 """
 
 import argparse
@@ -31,7 +31,8 @@ from scripts import company_data as data
 
 log = logging.getLogger("seed_company")
 
-DEFAULT_SOURCE = Path(__file__).resolve().parents[2] / "facebook" / "Facebook_files"
+# The page images used by the import are committed here so they ship inside the backend Docker image.
+DEFAULT_SOURCE = Path(__file__).resolve().parents[1] / "seed_assets" / "sahat-al-ramlah"
 
 
 class _Images:

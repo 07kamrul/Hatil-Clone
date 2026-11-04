@@ -8,9 +8,11 @@ Two Dokploy **Applications** (no compose, no nginx; Traefik routes). Postgres is
    (Context Path is relative to the repo root, not to Build Path; leaving it `.` fails with
    `"/requirements.txt": not found`.)
 2. Environment: paste `backend.env` (copy `backend.env.example`, fill `__placeholders__`;
-   JWT: `openssl rand -hex 64`). `CATALOG_IMPORT=auto` makes the first deploy back the DB up, import the
-   catalogue, verify and write `/app/data/import.done`; once `/api/v1/admin/import/status` reports `done`,
-   set `CATALOG_IMPORT=off` (later deploys skip anyway via the done marker, but off is explicit).
+   JWT: `openssl rand -hex 64`). `COMPANY_IMPORT=auto` (default) loads the Sahat Al Ramlah Facebook page content
+   (logo, banners, categories, products, posts, About, all images bundled in `backend/seed_assets/`) on the first
+   deploy and writes `/app/data/company.done`; later deploys skip so admin edits survive. `force` re-runs and
+   overwrites, `off` disables. The hatil.com scrape (`CATALOG_IMPORT`) is `off` by default; set `auto` only if
+   you also want that catalogue (it backs the DB up, imports, verifies and writes `/app/data/import.done`).
 3. Advanced -> Volumes (two mounts, both required for the automatic import):
    - Volume mount, name `hatil-uploads`, mount path `/app/uploads` (product images, survives redeploys).
    - Volume mount, name `hatil-data`, mount path `/app/data` (import state: `import.done`, `import.lock`,

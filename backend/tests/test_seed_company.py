@@ -128,3 +128,13 @@ def test_seed_company_deactivates_previous_products_and_categories(db: Session, 
 
     assert not db.scalar(select(Category).where(Category.slug == "old-cat")).is_active
     assert not db.scalar(select(Product).where(Product.sku == "OLD-1")).is_published
+
+
+def test_bundled_source_images_cover_every_image_the_import_uses() -> None:
+    from scripts.seed_company import DEFAULT_SOURCE
+
+    missing = [name for name in data.IMAGE_FILES.values() if not (DEFAULT_SOURCE / name).is_file()]
+    assert missing == []
+    for name in data.IMAGE_FILES.values():
+        with Image.open(DEFAULT_SOURCE / name) as img:
+            img.verify()

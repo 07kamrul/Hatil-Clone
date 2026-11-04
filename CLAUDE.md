@@ -20,11 +20,11 @@ python -m venv .venv && .venv/Scripts/pip install -r requirements-dev.txt   # Wi
 export DATABASE_URL=sqlite:///dev.db UPLOAD_DIR=uploads                   # or a postgres URL
 .venv/Scripts/alembic upgrade head && .venv/Scripts/python -m scripts.seed --demo
 .venv/Scripts/python -m uvicorn app.main:app --port 8000                  # docs at /api/docs
-.venv/Scripts/python -m pytest -q          # 211 tests, SQLite in-memory
+.venv/Scripts/python -m pytest -q          # 212 tests, SQLite in-memory
 .venv/Scripts/ruff check app scripts tests
 .venv/Scripts/python -m scripts.scrape_all [--limit N] [--backup]        # one command: migrate + products + content + verify
 .venv/Scripts/python -m scripts.scraper run --all | --category sofa | --resume [--limit N]
-.venv/Scripts/python -m scripts.seed_company [--keep-existing]       # logo, hero banner, categories, products, posts, about from facebook/Facebook_files (Sahat Al Ramlah)
+.venv/Scripts/python -m scripts.seed_company [--keep-existing]       # logo, hero banner, categories, products, posts, about from backend/seed_assets/sahat-al-ramlah (bundled Facebook images; runs automatically on first deploy, COMPANY_IMPORT=auto|force|off)
 .venv/Scripts/python -m scripts.scraper content --all | --showrooms | --banners | --pages | --blog [--limit N]
 
 # frontend (from frontend/)

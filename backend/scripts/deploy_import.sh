@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Catalogue import run automatically on backend container start (docker-entrypoint.sh launches it in the
 # background, so the Dokploy healthcheck never waits on the scraper). Controlled by env vars (Dokploy):
-#   CATALOG_IMPORT=auto|off     auto (default): import on deploy; off: do nothing.
+#   CATALOG_IMPORT=auto|off     off (default): do nothing; auto: scrape hatil.com on deploy.
 #   CATALOG_IMPORT_FORCE=yes    re-run even when /app/data/import.done exists.
 #   SCRAPER_RPS=1  SCRAPER_MAX_IMAGES=30
 # Behaviour on every run (state lives in DATA_DIR, default /app/data, a persistent volume):
@@ -16,7 +16,7 @@ set -uo pipefail
 
 log() { echo "[catalog-import] $*"; }
 
-MODE_SETTING="${CATALOG_IMPORT:-auto}"
+MODE_SETTING="${CATALOG_IMPORT:-off}"
 if [ "$MODE_SETTING" = "off" ]; then
   log "disabled (CATALOG_IMPORT=off)"
   exit 0
