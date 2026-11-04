@@ -5,26 +5,29 @@ import { RouterLink } from '@angular/router';
 
 import { STOCK_LABELS } from '../../../core/models';
 import { Toast } from '../../../core/toast';
+import { Icon } from '../../../shared/ui/icon';
 import { MoneyPipe } from '../../../shared/ui/money-pipe';
 import { AdminApi, ImportResult, apiError, downloadBlob } from '../core/admin-api';
+import { Badge } from '../ui/badge';
+import { ConfirmService } from '../ui/confirm-dialog';
+import { PageHeader } from '../ui/page-header';
 
 const PAGE_SIZE = 25;
 
 @Component({
   selector: 'app-admin-products',
-  imports: [RouterLink, FormsModule, MoneyPipe],
+  imports: [RouterLink, FormsModule, MoneyPipe, Icon, Badge, PageHeader],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <h1 class="text-2xl font-bold">Products</h1>
-      <div class="flex flex-wrap gap-2">
+    <app-page-header title="Products" [subtitle]="subtitle()">
+      <div actions class="flex flex-wrap gap-2">
         <label class="btn-outline cursor-pointer">{{ importing() ? 'Importing…' : 'Import CSV/Excel' }}
           <input type="file" accept=".csv,.xlsx" class="hidden" [disabled]="importing()" (change)="import($event)" /></label>
         <button type="button" class="btn-outline" (click)="export('csv')">Export CSV</button>
         <button type="button" class="btn-outline" (click)="export('xlsx')">Export Excel</button>
-        <a routerLink="new" class="btn-primary">+ New product</a>
+        <a routerLink="new" class="btn-primary"><app-icon name="plus" [size]="16" /> New product</a>
       </div>
-    </div>
+    </app-page-header>
 
     @if (importResult(); as r) {
       <div class="mb-4 rounded-md border bg-white p-3 text-sm">
@@ -61,28 +64,28 @@ const PAGE_SIZE = 25;
       </div>
     }
 
-    <div class="overflow-x-auto rounded-lg border bg-white">
-      <table class="w-full text-sm">
-        <thead class="bg-gray-50 text-left">
+    <div class="overflow-hidden rounded-lg border bg-white">
+      <table class="table-admin">
+        <thead>
           <tr>
-            <th class="w-8 px-3 py-2"><input type="checkbox" [checked]="allSelected()" (change)="toggleAll()" aria-label="Select all on page" /></th>
-            <th class="px-3 py-2"></th><th class="px-3 py-2">Name</th><th class="px-3 py-2">SKU</th><th class="px-3 py-2">Category</th>
-            <th class="px-3 py-2">Price</th><th class="px-3 py-2">Stock</th><th class="px-3 py-2">Status</th><th class="px-3 py-2">Views</th>
+            <th class="w-8"><input type="checkbox" [checked]="allSelected()" (change)="toggleAll()" aria-label="Select all on page" /></th>
+            <th></th><th>Name</th><th>SKU</th><th>Category</th>
+            <th>Price</th><th>Stock</th><th>Status</th><th>Views</th>
           </tr>
         </thead>
         <tbody>
           @for (p of products.value()?.items; track p.id) {
-            <tr class="border-t hover:bg-gray-50">
-              <td class="px-3 py-2"><input type="checkbox" [checked]="selected().has(p.id)" (change)="toggle(p.id)" [attr.aria-label]="'Select ' + p.name" /></td>
-              <td class="px-3 py-2">@if (p.image) { <img [src]="p.image" alt="" class="h-10 w-10 rounded object-cover" /> }</td>
-              <td class="px-3 py-2"><a [routerLink]="[p.id]" class="font-medium hover:text-brand">{{ p.name }}</a>
-                @if (p.is_featured) { <span class="ml-1 rounded bg-amber-100 px-1 text-xs">featured</span> }</td>
-              <td class="px-3 py-2 text-gray-600">{{ p.sku }}</td>
-              <td class="px-3 py-2 text-gray-600">{{ p.category?.name }}</td>
-              <td class="whitespace-nowrap px-3 py-2">{{ p.final_price | money }}@if (p.sale_price !== null) { <span class="ml-1 text-xs text-gray-400 line-through">{{ p.price | money }}</span> }</td>
-              <td class="px-3 py-2">{{ stock[p.stock_status] }}</td>
-              <td class="px-3 py-2"><span [class]="p.is_published ? 'text-green-700' : 'text-gray-400'">{{ p.is_published ? 'Published' : 'Hidden' }}</span></td>
-              <td class="px-3 py-2 text-gray-600">{{ p.view_count }}</td>
+            <tr>
+              <td><input type="checkbox" [checked]="selected().has(p.id)" (change)="toggle(p.id)" [attr.aria-label]="'Select ' + p.name" /></td>
+              <td>@if (p.image) { <img [src]="p.image" alt="" class="h-10 w-10 rounded object-cover" /> }</td>
+              <td><a [routerLink]="[p.id]" class="font-medium hover:text-brand">{{ p.name }}</a>
+                @if (p.is_featured) { <app-badge tone="amber" class="ml-1">Featured</app-badge> }</td>
+              <td class="text-gray-600">{{ p.sku }}</td>
+              <td class="text-gray-600">{{ p.category?.name }}</td>
+              <td class="whitespace-nowrap">{{ p.final_price | money }}@if (p.sale_price !== null) { <span class="ml-1 text-xs text-gray-400 line-through">{{ p.price | money }}</span> }</td>
+              <td>{{ stock[p.stock_status] }}</td>
+              <td>@if (p.is_published) { <app-badge tone="green">Published</app-badge> } @else { <app-badge tone="gray">Hidden</app-badge> }</td>
+              <td class="text-gray-600">{{ p.view_count }}</td>
             </tr>
           } @empty {
             <tr><td colspan="9" class="px-3 py-8 text-center text-gray-500">{{ products.isLoading() ? 'Loading…' : 'No products found.' }}</td></tr>
@@ -105,6 +108,7 @@ const PAGE_SIZE = 25;
 export class AdminProducts {
   private readonly api = inject(AdminApi);
   private readonly toast = inject(Toast);
+  private readonly confirmDialog = inject(ConfirmService);
 
   protected readonly stock = STOCK_LABELS;
   protected readonly q = signal('');
@@ -118,6 +122,11 @@ export class AdminProducts {
   protected priceTarget = 'price';
   protected priceValue: number | null = null;
   protected roundTo = 0;
+
+  protected readonly subtitle = computed(() => {
+    const r = this.products.value();
+    return r ? `${r.total} products` : '';
+  });
 
   protected readonly products = rxResource({
     params: () => ({ q: this.q(), published: this.published(), sort: this.sort(), page: this.page(), page_size: PAGE_SIZE }),
@@ -170,8 +179,13 @@ export class AdminProducts {
       .subscribe({ next: (r) => this.done(r.detail), error: (e: unknown) => this.toast.error(apiError(e)) });
   }
 
-  protected bulkDelete(): void {
-    if (!confirm(`Delete ${this.selected().size} products and their images? This cannot be undone.`)) return;
+  protected async bulkDelete(): Promise<void> {
+    const ok = await this.confirmDialog.confirm(
+      'Delete products',
+      `Delete ${this.selected().size} products and their images? This cannot be undone.`,
+      { confirmLabel: 'Delete', danger: true },
+    );
+    if (!ok) return;
     this.api.bulkDelete([...this.selected()]).subscribe({ next: (r) => this.done(r.detail), error: (e: unknown) => this.toast.error(apiError(e)) });
   }
 

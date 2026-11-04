@@ -23,7 +23,7 @@ export const adminRoutes: Routes = [
       { path: 'messages', loadComponent: () => import('./pages/inbox').then((m) => m.AdminMessages) },
       { path: 'settings', loadComponent: () => import('./pages/settings').then((m) => m.AdminSettings) },
       { path: 'users', canActivate: [superAdminGuard], loadComponent: () => import('./pages/users').then((m) => m.AdminUsers) },
-      { path: 'account', loadComponent: () => import('./pages/users').then((m) => m.AdminAccount) },
+      { path: 'account', loadComponent: () => import('./pages/account').then((m) => m.AdminAccount) },
     ],
   },
 ];

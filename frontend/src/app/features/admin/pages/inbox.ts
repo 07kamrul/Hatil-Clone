@@ -6,6 +6,9 @@ import { FormsModule } from '@angular/forms';
 import { Toast } from '../../../core/toast';
 import { MoneyPipe } from '../../../shared/ui/money-pipe';
 import { AdminApi, apiError } from '../core/admin-api';
+import { Badge } from '../ui/badge';
+import { ConfirmService } from '../ui/confirm-dialog';
+import { PageHeader } from '../ui/page-header';
 
 const PAGE_SIZE = 20;
 
@@ -15,11 +18,10 @@ interface ContactMessage { id: number; name: string; email: string | null; phone
 
 @Component({
   selector: 'app-admin-inquiries',
-  imports: [DatePipe, FormsModule, MoneyPipe],
+  imports: [DatePipe, FormsModule, MoneyPipe, Badge, PageHeader],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <h1 class="mb-2 text-2xl font-bold">Order inquiries</h1>
-    <p class="mb-4 text-sm text-gray-600">Anonymous log of WhatsApp checkouts for analytics. Orders themselves are handled in WhatsApp.</p>
+    <app-page-header title="Order inquiries" subtitle="Anonymous log of WhatsApp checkouts for analytics. Orders themselves are handled in WhatsApp." />
     <div class="mb-3 flex flex-wrap gap-2">
       <select class="input !w-auto" [ngModel]="status()" (ngModelChange)="status.set($event); page.set(1)" aria-label="Status">
         <option value="">All statuses</option><option value="new">New</option><option value="contacted">Contacted</option><option value="closed">Closed</option>
@@ -32,7 +34,12 @@ interface ContactMessage { id: number; name: string; email: string | null; phone
           <div class="flex flex-wrap items-center gap-3">
             <strong>#{{ i.id }}</strong>
             <span class="text-gray-500">{{ i.created_at | date: 'medium' }}</span>
-            <span class="rounded bg-gray-100 px-2 text-xs">{{ i.source }}</span>
+            <app-badge>{{ i.source }}</app-badge>
+            @switch (i.status) {
+              @case ('new') { <app-badge tone="green">New</app-badge> }
+              @case ('contacted') { <app-badge tone="amber">Contacted</app-badge> }
+              @case ('closed') { <app-badge tone="gray">Closed</app-badge> }
+            }
             <span class="ml-auto font-semibold">{{ i.total | money }}</span>
             <select class="input !w-auto !py-1" [ngModel]="i.status" (ngModelChange)="setStatus(i.id, $event)" [attr.aria-label]="'Status of inquiry ' + i.id">
               <option value="new">New</option><option value="contacted">Contacted</option><option value="closed">Closed</option>
@@ -67,6 +74,7 @@ interface ContactMessage { id: number; name: string; email: string | null; phone
 export class AdminInquiries {
   private readonly api = inject(AdminApi);
   private readonly toast = inject(Toast);
+  private readonly confirmDialog = inject(ConfirmService);
   protected readonly status = signal('');
   protected readonly q = signal('');
   protected readonly page = signal(1);
@@ -79,18 +87,19 @@ export class AdminInquiries {
     this.api.update('inquiries', id, { status }).subscribe({ next: () => this.toast.show('Status updated'), error: (e: unknown) => this.toast.error(apiError(e)) });
   }
 
-  protected remove(id: number): void {
-    if (!confirm('Delete this inquiry?')) return;
+  protected async remove(id: number): Promise<void> {
+    const ok = await this.confirmDialog.confirm('Delete inquiry', 'Delete this inquiry? This cannot be undone.', { confirmLabel: 'Delete', danger: true });
+    if (!ok) return;
     this.api.remove('inquiries', id).subscribe({ next: () => this.rows.reload(), error: (e: unknown) => this.toast.error(apiError(e)) });
   }
 }
 
 @Component({
   selector: 'app-admin-messages',
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, Badge, PageHeader],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <h1 class="mb-4 text-2xl font-bold">Contact messages</h1>
+    <app-page-header title="Contact messages" />
     <div class="mb-3 flex flex-wrap gap-2">
       <select class="input !w-auto" [ngModel]="filter()" (ngModelChange)="filter.set($event); page.set(1)" aria-label="Filter">
         <option value="">All</option><option value="false">Unread</option><option value="true">Read</option>
@@ -102,6 +111,7 @@ export class AdminInquiries {
         <article class="card p-4 text-sm" [class.border-brand]="!m.is_read">
           <div class="flex flex-wrap items-center gap-3">
             <strong [class.text-brand]="!m.is_read">{{ m.name }}</strong>
+            @if (!m.is_read) { <app-badge tone="green">Unread</app-badge> }
             @if (m.email) { <a [href]="'mailto:' + m.email" class="text-gray-600 hover:underline">{{ m.email }}</a> }
             @if (m.phone) { <a [href]="'tel:' + m.phone" class="text-gray-600 hover:underline">{{ m.phone }}</a> }
             <span class="ml-auto text-gray-500">{{ m.created_at | date: 'medium' }}</span>
@@ -127,6 +137,7 @@ export class AdminInquiries {
 export class AdminMessages {
   private readonly api = inject(AdminApi);
   private readonly toast = inject(Toast);
+  private readonly confirmDialog = inject(ConfirmService);
   protected readonly filter = signal('');
   protected readonly q = signal('');
   protected readonly page = signal(1);
@@ -139,8 +150,9 @@ export class AdminMessages {
     this.api.update('contact-messages', m.id, { is_read: !m.is_read }).subscribe({ next: () => this.rows.reload(), error: (e: unknown) => this.toast.error(apiError(e)) });
   }
 
-  protected remove(id: number): void {
-    if (!confirm('Delete this message?')) return;
+  protected async remove(id: number): Promise<void> {
+    const ok = await this.confirmDialog.confirm('Delete message', 'Delete this message? This cannot be undone.', { confirmLabel: 'Delete', danger: true });
+    if (!ok) return;
     this.api.remove('contact-messages', id).subscribe({ next: () => this.rows.reload(), error: (e: unknown) => this.toast.error(apiError(e)) });
   }
 }
