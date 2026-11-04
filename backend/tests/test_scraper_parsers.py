@@ -108,19 +108,33 @@ def test_extract_product_links_dedupes_and_stays_on_host() -> None:
 def test_source_404_page_is_skipped_not_failed() -> None:
     from scraper.parsers import SkipProduct
 
-    html = '<html><body><script>self.__next_f.push([1,"0:[\\"This page could not be found.\\"]\n"])</script></body></html>'
+    html = "<html><head><title>404: This page could not be found.</title></head><body></body></html>"
     with pytest.raises(SkipProduct):
         parse_product(html, "https://shop.example.com/sofa/gone-1")
 
 
-def test_404_page_with_stale_product_data_is_still_skipped() -> None:
-    """hatil.com 404 pages embed stale productDetails in the not-found fallback segment (observed 2026-11-04
-    on e.g. /Folding-Bed/capsicum-127); the not-found marker must win or the page fails instead of skipping."""
+def test_rendered_404_page_with_stale_product_data_is_still_skipped() -> None:
+    """A rendered not-found page (title says so) can carry stale productDetails; the title check must win."""
     from scraper.parsers import SkipProduct
 
     stale = json.dumps({"productDetails": {"ProductId": 10999, "ProductTitle": "Capsicum-127", "TotalPrice": 1}})
-    chunks = ['9:[["$","title",null,{"children":"404: This page could not be found."}]]\n', "10:" + stale + "\n"]
-    html = "<html><body>" + "".join(
-        f"<script>self.__next_f.push([1,{json.dumps(c)}])</script>" for c in chunks) + "</body></html>"
+    html = ("<html><head><title>404: This page could not be found.</title></head><body>"
+            f"<script>self.__next_f.push([1,{json.dumps('10:' + stale + chr(10))}])</script></body></html>")
     with pytest.raises(SkipProduct):
         parse_product(html, "https://shop.example.com/Folding-Bed/capsicum-127")
+
+
+def test_live_page_with_embedded_not_found_boundary_is_not_skipped() -> None:
+    """Regression: every live hatil.com page embeds the notFound boundary text in its flight payload
+    (verified 2026-11-04 on /Bar-Stool/virgo-103, HTTP 200); that must not mark the product discontinued."""
+    from scraper.parsers import SkipProduct
+
+    boundary = '9:[["$","title",null,{"children":"404: This page could not be found."}]]\n'
+    html = ("<html><head><title>Virgo-103 Bar Stool Price in Bangladesh | HATIL</title></head><body>"
+            f"<script>self.__next_f.push([1,{json.dumps(boundary)}])</script></body></html>")
+    try:
+        parse_product(html, "https://shop.example.com/Bar-Stool/virgo-103")
+    except SkipProduct:
+        pytest.fail("live page with an embedded notFound boundary was classified as discontinued")
+    except Exception:  # noqa: BLE001 - no product data in this stub is fine; only the skip is under test
+        pass

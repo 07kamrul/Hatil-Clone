@@ -22,6 +22,7 @@ export DATABASE_URL=sqlite:///dev.db UPLOAD_DIR=uploads                   # or a
 .venv/Scripts/python -m uvicorn app.main:app --port 8000                  # docs at /api/docs
 .venv/Scripts/python -m pytest -q          # 126 tests, SQLite in-memory
 .venv/Scripts/ruff check app scripts tests
+.venv/Scripts/python -m scripts.scrape_all [--limit N] [--backup]        # one command: migrate + products + content + verify
 .venv/Scripts/python -m scripts.scraper run --all | --category sofa | --resume [--limit N]
 .venv/Scripts/python -m scripts.scraper content --all | --showrooms | --banners | --pages | --blog [--limit N]
 

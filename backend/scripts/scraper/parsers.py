@@ -33,7 +33,10 @@ class SkipProduct(ParseError):  # noqa: N818 - signals "not importable", not a m
     """The page is valid but has nothing to import (discontinued/404 page, call-for-price item)."""
 
 
-NOT_FOUND_MARKERS = ("This page could not be found", "NEXT_NOT_FOUND", "NEXT_HTTP_ERROR_FALLBACK;404")
+# "This page could not be found" is NOT a marker on its own: every live page embeds Next.js's notFound
+# boundary ("404: This page could not be found.") in its flight payload. Only the rendered <title> counts.
+NOT_FOUND_MARKERS = ("NEXT_NOT_FOUND", "NEXT_HTTP_ERROR_FALLBACK;404")
+NOT_FOUND_TITLE = re.compile(r"<title[^>]*>[^<]*could not be found", re.IGNORECASE)
 
 
 @dataclass
@@ -135,9 +138,8 @@ def _resolve(value: Any, refs: dict[str, str]) -> Any:
 def parse_product(html: str, url: str) -> ScrapedProduct:
     flight = extract_flight(html)
     details = find_json(flight, "productDetails") if flight else None
-    # Next.js 404 pages keep stale product data in their not-found fallback segment, so the marker
-    # check must win even when `details` parsed successfully.
-    if any(marker in html for marker in NOT_FOUND_MARKERS):
+    # A rendered not-found page can still carry stale product data, so this check must win over `details`.
+    if NOT_FOUND_TITLE.search(html) or any(marker in html for marker in NOT_FOUND_MARKERS):
         raise SkipProduct(f"Not found on source (discontinued): {url}")
     if isinstance(details, dict) and details.get("name"):
         refs = text_rows(flight)
