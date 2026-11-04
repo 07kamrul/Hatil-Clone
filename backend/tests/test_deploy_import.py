@@ -266,5 +266,7 @@ def test_status_reports_states(client: TestClient, tmp_path: Path, monkeypatch: 
     assert "Created: 10" in body["report"]
     assert "line1" in body["last_log_tail"]
 
+    # a failed marker only reports `failed` while no done marker exists (done wins on a later success)
+    (data_dir / "import.done").unlink()
     (data_dir / "import.failed").write_text("")
     assert client.get("/api/v1/admin/import/status", headers=headers).json()["status"] == "failed"
