@@ -4,6 +4,7 @@ import {
 import type * as L from 'leaflet';
 
 import { Showroom } from '../../core/models';
+import { loadLeaflet, pinIcon } from '../../core/leaflet-loader';
 
 const DEFAULT_CENTER: [number, number] = [23.8103, 90.4125];
 const DEFAULT_ZOOM = 7;
@@ -17,7 +18,12 @@ const ATTRIBUTION = '&copy; OpenStreetMap contributors';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div #host class="h-full min-h-[320px] w-full rounded-lg bg-gray-100" role="region" aria-label="Showroom map"></div>
-    @if (failed()) { <p class="mt-2 text-sm text-gray-500">The map could not be loaded.</p> }
+    @if (failed()) {
+      <div class="mt-2 flex items-center gap-3 text-sm text-gray-500">
+        The map could not be loaded.
+        <button type="button" class="text-xs font-medium underline hover:text-gray-900" (click)="retry()">Retry</button>
+      </div>
+    }
   `,
   styles: `:host { display: block; }`,
 })
@@ -35,17 +41,7 @@ export class ShowroomMap {
   private markers = new Map<number, L.Marker>();
 
   constructor() {
-    afterNextRender(async () => {
-      try {
-        this.leaflet = await import('leaflet');
-        this.map = this.leaflet.map(this.host().nativeElement, { scrollWheelZoom: false }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
-        this.leaflet.tileLayer(TILE_URL, { attribution: ATTRIBUTION, maxZoom: 19 }).addTo(this.map);
-        this.layer = this.leaflet.layerGroup().addTo(this.map);
-        this.ready.set(true);
-      } catch {
-        this.failed.set(true);
-      }
-    });
+    afterNextRender(() => void this.init());
 
     effect(() => {
       if (this.ready()) this.renderMarkers(this.showrooms());
@@ -61,17 +57,34 @@ export class ShowroomMap {
     });
   }
 
+  protected retry(): void {
+    void this.init();
+  }
+
+  private async init(): Promise<void> {
+    try {
+      this.map?.remove(); // a retry must not stack a second map on the same container
+      this.map = null;
+      this.layer = null;
+      this.markers.clear();
+      this.leaflet = await loadLeaflet();
+      this.map = this.leaflet.map(this.host().nativeElement, { scrollWheelZoom: false }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+      this.leaflet.tileLayer(TILE_URL, { attribution: ATTRIBUTION, maxZoom: 19 }).addTo(this.map);
+      this.layer = this.leaflet.layerGroup().addTo(this.map);
+      requestAnimationFrame(() => this.map?.invalidateSize());
+      this.ready.set(true);
+    } catch (error: unknown) {
+      console.error('Leaflet failed to load', error);
+      this.failed.set(true);
+    }
+  }
+
   private renderMarkers(showrooms: Showroom[]): void {
     const Lf = this.leaflet;
     if (!Lf || !this.map || !this.layer) return;
     this.layer.clearLayers();
     this.markers.clear();
-    const icon = Lf.divIcon({
-      className: '',
-      html: '<span style="display:block;width:18px;height:18px;border-radius:9999px;background:var(--color-brand);border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></span>',
-      iconSize: [18, 18],
-      iconAnchor: [9, 9],
-    });
+    const icon = pinIcon(Lf);
     const points: L.LatLngExpression[] = [];
     for (const s of showrooms) {
       if (s.latitude === null || s.longitude === null) continue;
