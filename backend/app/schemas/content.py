@@ -113,6 +113,7 @@ class BlogPostIn(_Seo):
     slug: str | None = Field(None, pattern=SLUG_PATTERN, max_length=255)
     excerpt: str | None = Field(None, max_length=600)
     body_html: str = ""
+    gallery: list[str] = Field(default_factory=list, max_length=50)
     cover_image: str | None = Field(None, max_length=500)
     author: str | None = Field(None, max_length=120)
     tags: str | None = Field(None, max_length=300)
@@ -125,6 +126,7 @@ class BlogPostUpdate(_Seo):
     slug: str | None = Field(None, pattern=SLUG_PATTERN, max_length=255)
     excerpt: str | None = Field(None, max_length=600)
     body_html: str | None = None
+    gallery: list[str] | None = None
     cover_image: str | None = Field(None, max_length=500)
     author: str | None = Field(None, max_length=120)
     tags: str | None = Field(None, max_length=300)
@@ -147,6 +149,7 @@ class BlogPostSummary(ORMModel):
 
 class BlogPostOut(BlogPostSummary):
     body_html: str
+    gallery: list[str]
     seo_title: str | None
     seo_description: str | None
     seo_keywords: str | None

@@ -151,7 +151,7 @@ export interface BlogSummary {
   tags: string | null;
   published_at: string | null;
 }
-export interface BlogPost extends BlogSummary { body_html: string; seo_title: string | null; seo_description: string | null }
+export interface BlogPost extends BlogSummary { body_html: string; gallery: string[]; seo_title: string | null; seo_description: string | null }
 
 export interface CmsPage { id: number; title: string; slug: string; body_html: string; seo_title: string | null; seo_description: string | null }
 export interface Faq { id: number; question: string; answer_html: string; group: string; show_on_home: boolean }

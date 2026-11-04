@@ -31,7 +31,7 @@ export DATABASE_URL=sqlite:///dev.db UPLOAD_DIR=uploads                   # or a
 npm ci
 npx ng serve             # http://localhost:4200, proxies /api and /uploads to :8000 (proxy.conf.json)
 npx ng build             # SSR build -> dist/frontend
-npx ng test --watch=false   # vitest, 46 tests
+npx ng test --watch=false   # vitest, 51 tests
 ```
 Default admin: `admin@example.com` / `ChangeMe123!` (set by SUPER_ADMIN_* env vars).
 

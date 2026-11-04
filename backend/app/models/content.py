@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.enums import BannerPlacement
@@ -51,6 +51,7 @@ class BlogPost(IdMixin, TimestampMixin, SeoMixin, Base):
     slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     excerpt: Mapped[str | None] = mapped_column(String(600), default=None)
     body_html: Mapped[str] = mapped_column(Text, default="")
+    gallery: Mapped[list[str]] = mapped_column(JSON, default=list)
     cover_image: Mapped[str | None] = mapped_column(String(500), default=None)
     author: Mapped[str | None] = mapped_column(String(120), default=None)
     tags: Mapped[str | None] = mapped_column(String(300), default=None)

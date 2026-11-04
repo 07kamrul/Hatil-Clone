@@ -117,7 +117,7 @@ def _seed_showroom(db: Session, images: _Images) -> Showroom:
 
 
 def _seed_blog_post(db: Session, images: _Images) -> BlogPost:
-    fields = {k: v for k, v in data.BLOG_POST.items() if k not in ("slug", "image_key")}
+    fields = {k: v for k, v in data.BLOG_POST.items() if k not in ("slug", "image_key", "gallery_keys")}
     post = db.scalar(select(BlogPost).where(BlogPost.slug == data.BLOG_POST["slug"]))
     if post is None:
         post = BlogPost(slug=data.BLOG_POST["slug"], published_at=datetime.now(UTC), **fields)
@@ -127,6 +127,7 @@ def _seed_blog_post(db: Session, images: _Images) -> BlogPost:
             setattr(post, key, value)
     post.is_published = True
     post.seo_title = post.title
+    post.gallery = [u for u in (images.url(k, "blog") for k in data.BLOG_POST["gallery_keys"]) if u]
     if not post.cover_image:
         post.cover_image = images.url(data.BLOG_POST["image_key"], "blog")
     return post
@@ -141,8 +142,8 @@ def _seed_posts(db: Session, images: _Images) -> list[BlogPost]:
             db.add(post)
         urls = [u for u in (images.url(k, "blog") for k in image_keys) if u]
         post.title, post.excerpt, post.tags, post.author = title, excerpt, tags, data.SITE_NAME
-        post.body_html = f"<p>{excerpt}</p>" + "".join(f'<p><img src="{u}" alt="{title}"></p>' for u in urls) + (
-            f"<p>WhatsApp: {data.WHATSAPP}<br>Sharjah, UAE</p>")
+        post.body_html = f"<p>{excerpt}</p>" + f"<p>WhatsApp: {data.WHATSAPP}<br>Sharjah, UAE</p>"
+        post.gallery = urls
         post.cover_image = images.url(cover_key, "blog") or post.cover_image
         post.published_at = datetime.fromisoformat(published_at)
         post.is_published, post.seo_title = True, title

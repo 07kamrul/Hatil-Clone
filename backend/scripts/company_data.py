@@ -112,6 +112,8 @@ BLOG_POST = {
     "tags": "kitchen, custom furniture, modular kitchen, sharjah",
     "author": SITE_NAME,
     "image_key": "kitchen_island",
+    "gallery_keys": ["kitchen_u_cream", "kitchen_l_glass", "kitchen_l_taupe", "kitchen_u_shelves",
+                     "kitchen_island", "kitchen_bar"],
 }
 
 # (title, subtitle, link, button, placement, image key)

@@ -68,7 +68,8 @@ def test_seed_company_imports_posts_with_images(db: Session, tmp_path: Path) -> 
     seed_company(db, _fake_fb_images(tmp_path))
 
     post = db.scalar(select(BlogPost).where(BlogPost.slug == data.POSTS[1][0]))
-    assert post is not None and post.cover_image and post.body_html.count("<img") == len(data.POSTS[1][6])
+    assert post is not None and post.cover_image and len(post.gallery) == len(data.POSTS[1][6])
+    assert "<img" not in post.body_html
     assert post.published_at.year == 2026
 
 
