@@ -13,6 +13,7 @@ import { ProductCardView } from '../../shared/ui/product-card';
 import { HomeHero } from './home-hero';
 
 const PRODUCTS_PER_ROW = 8;
+const MIN_HERO_SLIDES = 5;
 
 interface HomeData {
   hero: Banner[];
@@ -191,6 +192,17 @@ export class Home {
     const d = this.data.value();
     if (!d) return [];
     const photos = d.categories.map((c) => c.image).filter((img): img is string => !!img);
-    return d.hero.map((b, i) => (b.image || !photos.length ? b : { ...b, image: photos[i % photos.length] }));
+    const hero = d.hero.map((b, i) => (b.image || !photos.length ? b : { ...b, image: photos[i % photos.length] }));
+    if (hero.length >= MIN_HERO_SLIDES) return hero;
+    // Too few banners for a carousel: top up with category slides so the hero keeps sliding.
+    const extra: Banner[] = d.categories
+      .filter((c) => !!c.image)
+      .slice(0, MIN_HERO_SLIDES + 1 - hero.length)
+      .map((c, i) => ({
+        id: -(c.id || i + 1), title: c.name, subtitle: 'Explore the collection', image: c.image as string,
+        mobile_image: null, link_url: `/category/${c.slug}`, button_text: 'Shop now',
+        placement: 'hero', sort_order: 1000 + i, is_active: true,
+      }));
+    return [...hero, ...extra];
   });
 }
