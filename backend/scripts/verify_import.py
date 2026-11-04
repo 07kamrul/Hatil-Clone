@@ -144,6 +144,42 @@ def check_sitemap(client: httpx.Client, api: str, total: int, sample_slugs: list
     return Check("sitemap", ok, f"{len(listed)} product URLs for {total} products; sampled missing: {missing or 'none'}")
 
 
+def check_content(client: httpx.Client, api: str, media_base: str) -> list[Check]:
+    """Non-product content: counts exist and every stored image URL is local (/uploads/...), not hatil.com."""
+    checks: list[Check] = []
+    endpoints = [("banners", "banners"), ("showrooms", "showrooms"), ("pages", "pages"),
+                 ("faqs", "faqs"), ("blog posts", "blog?page=1&page_size=100")]
+    for label, path in endpoints:
+        try:
+            data = get_json(client, f"{api}/{path}")
+            items = data["items"] if isinstance(data, dict) else data
+            checks.append(Check(f"content {label}", len(items) > 0, f"{len(items)} rows"))
+        except (httpx.HTTPError, KeyError) as exc:
+            checks.append(Check(f"content {label}", False, f"unavailable: {exc}"))
+    remote = _remote_image_urls(client, api, media_base)
+    checks.append(Check("content images local", not remote,
+                        f"{len(remote)} remote image URLs (should be 0): {remote[:5]}"))
+    return checks
+
+
+def _remote_image_urls(client: httpx.Client, api: str, media_base: str) -> list[str]:
+    """Image URLs in banners/showrooms/blog that are neither /uploads paths nor loadable media."""
+    remote: list[str] = []
+    paths = ["/banners", "/showrooms", "/blog?page=1&page_size=100"]
+    for path in paths:
+        try:
+            data = get_json(client, f"{api}{path}")
+        except httpx.HTTPError:
+            continue
+        items = data.get("items", []) if isinstance(data, dict) else data
+        for item in items:
+            for field in ("image", "mobile_image", "cover_image", "thumb_url", "url"):
+                value = item.get(field)
+                if value and not value.startswith("/uploads"):
+                    remote.append(f"{path}:{field}={value[:80]}")
+    return remote
+
+
 def spot_check(polite: PoliteClient, client: httpx.Client, api: str, source_url: str, slug: str) -> Check:
     try:
         live = parse_product(polite.get_text(source_url), source_url)
@@ -193,6 +229,7 @@ def main() -> int:
     parser.add_argument("--products-json", type=Path, help="products-<run>.json (enables the live spot-check)")
     parser.add_argument("--samples", type=int, default=10)
     parser.add_argument("--spot", type=int, default=5)
+    parser.add_argument("--content", action="store_true", help="also verify showrooms, banners, pages, FAQs, blog")
     parser.add_argument("--seed", type=int, default=None)
     args = parser.parse_args()
     if not args.api:
@@ -208,6 +245,8 @@ def main() -> int:
         total = get_json(client, f"{api}/products?page=1&page_size=1")["total"]
         cards = list_cards(client, api, total)
         checks += [check_counts(total, counts), check_tree(client, api)]
+        if args.content:
+            checks += check_content(client, api, media_base)
         slugs = [card["slug"] for card in cards]
         sample = rng.sample(slugs, min(args.samples, len(slugs)))
         checks += [check_product(client, api, media_base, slug) for slug in sample]

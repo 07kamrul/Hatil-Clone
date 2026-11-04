@@ -77,3 +77,29 @@ def test_get_json_gives_up_after_repeated_rate_limiting() -> None:
 
     with pytest.raises(httpx.HTTPStatusError):
         get_json(client, "http://api/x", sleep=lambda _s: None)
+
+
+def test_check_content_flags_remote_images() -> None:
+    import httpx as _httpx
+
+    from scripts.verify_import import check_content
+
+    def handler(request: _httpx.Request) -> _httpx.Response:
+        path = request.url.path
+        if path.endswith("/banners"):
+            return _httpx.Response(200, json=[{"title": "Hero", "image": "/uploads/banners/a.webp"},
+                                              {"title": "Bad", "image": "https://hatil.com/remote.jpg"}])
+        if path.endswith("/showrooms"):
+            return _httpx.Response(200, json=[{"name": "S", "image": None}])
+        if path.endswith("/faqs"):
+            return _httpx.Response(200, json=[])
+        return _httpx.Response(200, json={"items": [{"slug": "p", "cover_image": "/uploads/blog/c.webp"}]})
+
+    with _httpx.Client(transport=_httpx.MockTransport(handler)) as client:
+        checks = check_content(client, "http://api/api/v1", "http://api")
+
+    by_name = {c.name: c for c in checks}
+    assert by_name["content banners"].ok and by_name["content showrooms"].ok
+    assert not by_name["content faqs"].ok  # empty means nothing imported
+    assert not by_name["content images local"].ok  # the hatil.com URL is flagged
+    assert "hatil.com/remote.jpg" in by_name["content images local"].detail

@@ -23,6 +23,7 @@ export DATABASE_URL=sqlite:///dev.db UPLOAD_DIR=uploads                   # or a
 .venv/Scripts/python -m pytest -q          # 126 tests, SQLite in-memory
 .venv/Scripts/ruff check app scripts tests
 .venv/Scripts/python -m scripts.scraper run --all | --category sofa | --resume [--limit N]
+.venv/Scripts/python -m scripts.scraper content --all | --showrooms | --banners | --pages | --blog [--limit N]
 
 # frontend (from frontend/)
 npm ci

@@ -113,6 +113,10 @@ export SCRAPER_MAX_IMAGES="${SCRAPER_MAX_IMAGES:-30}"
 cd "$APP_DIR"
 SCRAPER_RC=0
 python -m scripts.scraper run "$MODE" || SCRAPER_RC=$?
+if [ "$SCRAPER_RC" -eq 0 ]; then
+  log "running content import (showrooms, banners, pages, FAQs, blog)"
+  python -m scripts.scraper content --all >> "$LOG_FILE" 2>&1 || log "WARNING: content import exited non-zero (continuing)"
+fi
 
 # --- verify + report ----------------------------------------------------------------------------
 REPORT_SRC=""
@@ -128,7 +132,7 @@ fi
 log "scraper finished; verifying against $API_BASE"
 VERIFY_RC=0
 PYTHON_BIN="$(command -v python)"
-VERIFY_ARGS=(--api "$API_BASE")
+VERIFY_ARGS=(--api "$API_BASE" --content)
 newest_in() { ls -1t "$1"/$2 2>/dev/null | head -1; }
 REPORT_JSON="$(newest_in "$SCRAPER_OUTPUT_DIR" 'products-*.json')"
 [ -n "$REPORT_JSON" ] && VERIFY_ARGS+=(--products-json "$REPORT_JSON")

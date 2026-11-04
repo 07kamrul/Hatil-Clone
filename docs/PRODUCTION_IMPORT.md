@@ -17,7 +17,13 @@ There is no Postgres container, so database commands go to the external server, 
 - Rate is capped at **1 request/second per host** whatever `SCRAPER_RPS` says. `SCRAPER_MAX_IMAGES` (default 30).
 - Upsert key is unchanged: SKU, falling back to slug. Re-runs do not duplicate rows or images (images are only
   attached when a product has none, so admin-added images are never replaced).
-- Not scraped yet: banners, showrooms, blog posts, static pages, category images (see `docs/HANDOFF.md`).
+- **Content** (showrooms, banners, static pages, FAQs, blog posts) is imported by
+  `python -m scripts.scraper content --all` (or per type: `--showrooms|--banners|--pages|--blog`).
+  It is run automatically by `scripts/deploy_import.sh` after the product scrape; images are downloaded,
+  converted to WebP and stored in UPLOAD_DIR like product images, so nothing hotlinks hatil.com.
+  Banners are create-only; showrooms/pages/blog/FAQs upsert by slug or question.
+- **Category images**: hatil.com has none; the importer uses the first product photo of each category
+  (`ProductImporter._maybe_image_category`) until an admin uploads a real one.
 - No Playwright needed: every failing page seen was server-rendered; the cause was parser schema, not JavaScript.
 
 ## 2. Before the run

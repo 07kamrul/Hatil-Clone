@@ -30,6 +30,23 @@ inquiry logging, admin login, product edit/save, and the banner form.
 - **Coverage:** 87% (`pytest --cov=app --cov=scripts`), 78 backend tests.
 - README.md written (run, deploy, scraper + legal note, BRAND_MODE, assumptions).
 
+## 2026-11-04 content import built (tests 164 passed)
+- Product scraper fixes: 404 pages that embed stale `productDetails` flight data now classify as
+  `SkipProduct` (marker check runs before the parseable-data branches); `--category` no longer drops
+  listing-page URLs when `urls` is given (`targets()` returns early). fcntl import guarded for Windows.
+- New `scripts/scraper/content.py` (pure parsers; verified against live samples 2026-11-04) and
+  `scripts/scraper/content_import.py` (discovery + WebP image download via StorageService + upserts).
+  CLI: `python -m scripts.scraper content --all|--showrooms|--banners|--pages|--blog [--limit N]`.
+  Live-page facts: 70 showroom URLs, 788 blog posts (trailing-slash redirects, Yoast JSON-LD, WP body in
+  `.entry-content`), static page bodies live in the DOM `main`, FAQs in `.accordion-item` nodes, homepage
+  flight has 12 `homePageCard` banners (3 hero + 9 promo tiles, deduped by title+placement).
+- `localize_html` rewrites `<img src>` in page/blog bodies to stored /uploads paths (cached by source URL,
+  failed downloads dropped) so nothing hotlinks hatil.com. Category images fall back to the first product photo.
+- `verify_import.py --content` checks content counts and flags non-/uploads image URLs;
+  `deploy_import.sh` runs `content --all` after the product scrape and passes `--content` to verify.
+- Still pending: full production run (docs/PRODUCTION_IMPORT.md), live spot-checks, `--resume` of the
+  245 failed product URLs (the stale-data fix should reclassify most as skipped/gone).
+
 ## Remaining work
 1. **Run the production import** following `docs/PRODUCTION_IMPORT.md` (needs Dokploy access; backup first).
    Then fill in its section 6 and do the live spot-checks.

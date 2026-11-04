@@ -104,11 +104,13 @@ class ScrapeRun:
 
     def targets(self, db: Session, resume: bool, category: str | None, urls: list[str] | None) -> list[ScrapeLog]:
         stmt = select(ScrapeLog).where(ScrapeLog.kind == "product").order_by(ScrapeLog.id)
+        if urls is not None:
+            # An explicit URL list (e.g. --category) is matched exactly: listing-page links carry a
+            # different slug than the product URLs they lead to, so the category filter would drop them.
+            return list(db.scalars(stmt.where(ScrapeLog.url.in_(urls))))
         if resume:
             stmt = stmt.where(ScrapeLog.status.in_([ScrapeStatus.PENDING, ScrapeStatus.FAILED]),
                               ScrapeLog.attempts < self.config.max_attempts_per_url)
-        elif urls is not None:
-            stmt = stmt.where(ScrapeLog.url.in_(urls))
         if category:
             stmt = stmt.where(ScrapeLog.category_slug == category)
         return list(db.scalars(stmt))

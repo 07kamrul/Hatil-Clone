@@ -3,10 +3,14 @@
 GET /api/v1/admin/import/status -> running|done|failed|off, the last log tail (200 lines) and the report.
 """
 
-import fcntl
 import os
 import re
 from pathlib import Path
+
+try:  # Unix-only; the lock check degrades gracefully on Windows dev machines
+    import fcntl
+except ImportError:  # pragma: no cover - platform specific
+    fcntl = None  # type: ignore[assignment]
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -23,7 +27,7 @@ def _data_dir() -> Path:
 
 def _is_running(lock_file: Path) -> bool:
     """True when another process currently holds the import flock."""
-    if not lock_file.exists():
+    if fcntl is None or not lock_file.exists():
         return False
     try:
         fd = os.open(lock_file, os.O_RDWR)

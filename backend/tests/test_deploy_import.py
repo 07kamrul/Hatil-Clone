@@ -23,6 +23,9 @@ PYTHON_SHIM = r"""#!/usr/bin/env bash
 echo "python $*" >> "$CALL_LOG"
 case " $* " in
   *" -m scripts.scrape_log_count "*) echo "${FAKE_ROWS:-0}"; exit 0 ;;
+  *" -m scripts.scraper content "*)
+    echo "content" >> "$SCRAPER_MODE_FILE"
+    exit 0 ;;
   *" -m scripts.scraper "*)
     echo "${@: -1}" >> "$SCRAPER_MODE_FILE"
     mkdir -p "$SCRAPER_OUTPUT_DIR"
@@ -128,7 +131,7 @@ def test_done_marker_ignored_when_forced(paths: dict[str, Path]) -> None:
     (paths["data"] / "import.done").write_text("completed: 2026-01-01T00:00:00Z\n")
     res = run_import(paths, CATALOG_IMPORT="auto", CATALOG_IMPORT_FORCE="yes")
     assert res.returncode == 0
-    assert scraper_modes(paths) == ["--all"]  # forced run, fresh scrape_log -> --all
+    assert scraper_modes(paths) == ["--all", "content"]  # forced run, then content import
 
 
 @pytest.mark.parametrize(
@@ -138,7 +141,7 @@ def test_done_marker_ignored_when_forced(paths: dict[str, Path]) -> None:
 def test_resume_vs_all_decision(paths: dict[str, Path], rows: Any, expected: str) -> None:
     res = run_import(paths, CATALOG_IMPORT="auto", FAKE_ROWS=rows)
     assert res.returncode == 0
-    assert scraper_modes(paths) == [expected]
+    assert scraper_modes(paths) == [expected, "content"]  # products, then content import
 
 
 def test_pg_dump_failure_aborts_before_scraping(paths: dict[str, Path]) -> None:
@@ -183,7 +186,7 @@ def test_successful_run_writes_markers_report_and_prunes_backups(paths: dict[str
     assert res.returncode == 0, res.stdout + res.stderr
     done = (paths["data"] / "import.done").read_text()
     assert "created: 10" in done and "failed: 1" in done and "completed:" in done
-    assert scraper_modes(paths) == ["--all"]
+    assert scraper_modes(paths) == ["--all", "content"]
     assert "Created: 10" in (paths["data"] / "import-report.md").read_text()
     assert len(list(backups.glob("hatil-*.sql.gz"))) == 3
     assert not (paths["data"] / "import.failed").exists()
@@ -224,7 +227,7 @@ def test_second_consecutive_run_exits_complete(paths: dict[str, Path]) -> None:
     second = run_import(paths, CATALOG_IMPORT="auto")
     assert second.returncode == 0
     assert "import already complete" in second.stdout
-    assert len(scraper_modes(paths)) == 1  # scraper ran exactly once across both invocations
+    assert len(scraper_modes(paths)) == 2  # product run + content import, exactly once each
 
 
 # --- GET /api/v1/admin/import/status -------------------------------------------------------------

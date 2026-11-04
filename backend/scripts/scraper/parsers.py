@@ -135,7 +135,9 @@ def _resolve(value: Any, refs: dict[str, str]) -> Any:
 def parse_product(html: str, url: str) -> ScrapedProduct:
     flight = extract_flight(html)
     details = find_json(flight, "productDetails") if flight else None
-    if not details and any(marker in html for marker in NOT_FOUND_MARKERS):
+    # Next.js 404 pages keep stale product data in their not-found fallback segment, so the marker
+    # check must win even when `details` parsed successfully.
+    if any(marker in html for marker in NOT_FOUND_MARKERS):
         raise SkipProduct(f"Not found on source (discontinued): {url}")
     if isinstance(details, dict) and details.get("name"):
         refs = text_rows(flight)

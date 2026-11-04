@@ -84,6 +84,7 @@ class ProductImporter:
         if (data.images or data.dimension_images) and (replace_images or not product.images):
             self._attach_images(product, data.images, replace=replace_images)
             self._attach_images(product, data.dimension_images, replace=False, is_dimension=True)
+        self._maybe_image_category(product)
         self.db.flush()
         return action, product
 
@@ -181,6 +182,13 @@ class ProductImporter:
             parent = category
         assert parent is not None
         return parent
+
+    def _maybe_image_category(self, product: Product) -> None:
+        """hatil.com exposes no category images; use the first product photo until an admin uploads one."""
+        category = product.category
+        if category is None or category.image or not product.images:
+            return
+        category.image = product.images[0].thumb_path or product.images[0].path
 
     def _attach_images(self, product: Product, urls: list[str], replace: bool, is_dimension: bool = False) -> None:
         storage = get_storage()

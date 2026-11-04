@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 from pathlib import Path
 
@@ -110,3 +111,16 @@ def test_source_404_page_is_skipped_not_failed() -> None:
     html = '<html><body><script>self.__next_f.push([1,"0:[\\"This page could not be found.\\"]\n"])</script></body></html>'
     with pytest.raises(SkipProduct):
         parse_product(html, "https://shop.example.com/sofa/gone-1")
+
+
+def test_404_page_with_stale_product_data_is_still_skipped() -> None:
+    """hatil.com 404 pages embed stale productDetails in the not-found fallback segment (observed 2026-11-04
+    on e.g. /Folding-Bed/capsicum-127); the not-found marker must win or the page fails instead of skipping."""
+    from scraper.parsers import SkipProduct
+
+    stale = json.dumps({"productDetails": {"ProductId": 10999, "ProductTitle": "Capsicum-127", "TotalPrice": 1}})
+    chunks = ['9:[["$","title",null,{"children":"404: This page could not be found."}]]\n', "10:" + stale + "\n"]
+    html = "<html><body>" + "".join(
+        f"<script>self.__next_f.push([1,{json.dumps(c)}])</script>" for c in chunks) + "</body></html>"
+    with pytest.raises(SkipProduct):
+        parse_product(html, "https://shop.example.com/Folding-Bed/capsicum-127")
