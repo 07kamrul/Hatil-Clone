@@ -21,7 +21,7 @@ const REPLY_NOTE = 'Our team typically replies within one working day.';
     <app-breadcrumbs [crumbs]="[{ label: 'Contact' }]" />
 
     <div class="container-x pt-8">
-      <h1 class="h-1">Contact us</h1>
+      <h1 class="heading-1">Contact us</h1>
       <p class="text-muted mt-2 max-w-2xl">Questions about a product, delivery or an order? Reach us on the channel that suits you — or send a message below.</p>
       <p class="mt-2 flex items-center gap-2 text-sm text-gray-500"><app-icon name="clock" [size]="16" /> {{ replyNote }}</p>
       <hr class="mt-6 border-gray-200" />

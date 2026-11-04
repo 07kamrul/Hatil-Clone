@@ -115,39 +115,60 @@ const MORE_INFO: readonly FooterLink[] = [
 
         <nav aria-label="The company" class="border-t border-neutral-800 pt-2 lg:border-0 lg:pt-0">
           <details class="group" [open]="isDesktop()">
-          <summary class="footer-title">The Company<app-icon name="chevronDown" [size]="18" class="transition-transform group-open:rotate-180 lg:hidden" /></summary>
-          <ul class="space-y-1 pb-3 text-sm lg:space-y-3">
-            <li><a routerLink="/" class="footer-link">Return Home</a></li>
-            @for (p of pages(); track p.slug) {
-              <li>
-                <a [routerLink]="['/page', p.slug]" class="footer-link">{{ p.title }}</a>
-              </li>
-            }
-          </ul>
+            <summary class="footer-title">
+              The Company<app-icon
+                name="chevronDown"
+                [size]="18"
+                class="transition-transform group-open:rotate-180 lg:hidden"
+              />
+            </summary>
+            <ul class="space-y-1 pb-3 text-sm lg:space-y-3">
+              <li><a routerLink="/" class="footer-link">Return Home</a></li>
+              @for (p of pages(); track p.slug) {
+                <li>
+                  <a [routerLink]="['/page', p.slug]" class="footer-link">{{ p.title }}</a>
+                </li>
+              }
+            </ul>
           </details>
         </nav>
         <nav aria-label="Need help" class="border-t border-neutral-800 pt-2 lg:border-0 lg:pt-0">
           <details class="group" [open]="isDesktop()">
-          <summary class="footer-title">Need Help?<app-icon name="chevronDown" [size]="18" class="transition-transform group-open:rotate-180 lg:hidden" /></summary>
-          <ul class="space-y-1 pb-3 text-sm lg:space-y-3">
-            @for (l of needHelp; track l.path) {
-              <li>
-                <a [routerLink]="l.path" class="footer-link">{{ l.label }}</a>
-              </li>
-            }
-          </ul>
+            <summary class="footer-title">
+              Need Help?<app-icon
+                name="chevronDown"
+                [size]="18"
+                class="transition-transform group-open:rotate-180 lg:hidden"
+              />
+            </summary>
+            <ul class="space-y-1 pb-3 text-sm lg:space-y-3">
+              @for (l of needHelp; track l.path) {
+                <li>
+                  <a [routerLink]="l.path" class="footer-link">{{ l.label }}</a>
+                </li>
+              }
+            </ul>
           </details>
         </nav>
-        <nav aria-label="More information" class="border-t border-neutral-800 pt-2 lg:border-0 lg:pt-0">
+        <nav
+          aria-label="More information"
+          class="border-t border-neutral-800 pt-2 lg:border-0 lg:pt-0"
+        >
           <details class="group" [open]="isDesktop()">
-          <summary class="footer-title">More Information<app-icon name="chevronDown" [size]="18" class="transition-transform group-open:rotate-180 lg:hidden" /></summary>
-          <ul class="space-y-1 pb-3 text-sm lg:space-y-3">
-            @for (l of moreInfo; track l.path) {
-              <li>
-                <a [routerLink]="l.path" class="footer-link">{{ l.label }}</a>
-              </li>
-            }
-          </ul>
+            <summary class="footer-title">
+              More Information<app-icon
+                name="chevronDown"
+                [size]="18"
+                class="transition-transform group-open:rotate-180 lg:hidden"
+              />
+            </summary>
+            <ul class="space-y-1 pb-3 text-sm lg:space-y-3">
+              @for (l of moreInfo; track l.path) {
+                <li>
+                  <a [routerLink]="l.path" class="footer-link">{{ l.label }}</a>
+                </li>
+              }
+            </ul>
           </details>
           @if (s().whatsapp_number) {
             <a
@@ -191,6 +212,11 @@ const MORE_INFO: readonly FooterLink[] = [
         margin-bottom: 1.25rem;
         cursor: default;
         pointer-events: none;
+      }
+      /* Show column links on desktop even before hydration sets [open] (avoids SSR collapsed flash). */
+      details::details-content {
+        content-visibility: visible;
+        display: block;
       }
     }
     .footer-link {

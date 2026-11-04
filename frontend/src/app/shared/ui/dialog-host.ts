@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   ElementRef,
   computed,
   effect,
@@ -22,6 +21,7 @@ const KIND_STYLES: Record<
 };
 
 /** Renders the `Dialog` service's current request. Mounted once in `App`. */
+import { useScrollLock } from '../../core/scroll-lock';
 @Component({
   selector: 'app-dialog-host',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -120,11 +120,7 @@ export class DialogHost {
     effect(() => {
       if (typeof document === 'undefined') return;
       const req = this.dialog.state();
-      if (!req) {
-        document.body.style.overflow = '';
-        return;
-      }
-      document.body.style.overflow = 'hidden';
+      if (!req) return;
       // Focus the safest control: the input on prompt, Cancel on danger, else Confirm.
       setTimeout(() => {
         if (!this.dialog.state()) return;
@@ -138,9 +134,7 @@ export class DialogHost {
         if (target instanceof HTMLInputElement) target.select();
       });
     });
-    inject(DestroyRef).onDestroy(() => {
-      if (typeof document !== 'undefined') document.body.style.overflow = '';
-    });
+    useScrollLock(computed(() => this.dialog.state() !== null));
   }
 
   protected onInput(value: string): void {

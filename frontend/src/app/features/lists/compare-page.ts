@@ -19,7 +19,7 @@ import { MoneyPipe } from '../../shared/ui/money-pipe';
   template: `
     <div class="container-x page-y">
       <div class="mb-6 flex items-center justify-between gap-3">
-        <h1 class="h-1">Compare products</h1>
+        <h1 class="heading-1">Compare products</h1>
         @if (compare.count()) { <button type="button" class="min-h-11 shrink-0 text-sm text-red-600 hover:underline" (click)="compare.clear()">Clear all</button> }
       </div>
       @if (items().length) {
@@ -55,7 +55,7 @@ import { MoneyPipe } from '../../shared/ui/money-pipe';
         <div class="skeleton h-80 w-full rounded-lg" aria-busy="true" aria-label="Loading comparison"></div>
       } @else {
         <div class="empty-state">
-          <p class="h-3">Nothing to compare yet</p>
+          <p class="heading-3">Nothing to compare yet</p>
           <p class="text-muted">Add up to 4 products to compare them side by side.</p>
           <a routerLink="/products" class="btn-primary mt-2">Browse products</a>
         </div>

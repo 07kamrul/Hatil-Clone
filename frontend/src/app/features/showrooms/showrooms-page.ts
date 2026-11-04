@@ -20,7 +20,7 @@ import { ShowroomMap } from './showroom-map';
     <div class="container-x pb-12">
       <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 class="h-1">Our showrooms</h1>
+          <h1 class="heading-1">Our showrooms</h1>
           @if (!showrooms.isLoading()) { <p class="text-muted mt-1 text-sm" aria-live="polite">{{ count() }} {{ count() === 1 ? 'location' : 'locations' }}</p> }
         </div>
         <label class="flex w-full items-center gap-2 text-sm sm:w-auto">City

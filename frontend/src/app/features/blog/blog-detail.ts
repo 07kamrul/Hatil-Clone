@@ -35,7 +35,7 @@ export function wrapIndex(current: number, delta: number, count: number): number
         [crumbs]="[{ label: 'Inspiration', link: ['/blog'] }, { label: d.post.title }]"
       />
       <article class="container-x max-w-3xl pb-12">
-        <h1 class="h-1 leading-tight break-words">{{ d.post.title }}</h1>
+        <h1 class="heading-1 leading-tight break-words">{{ d.post.title }}</h1>
         <p class="mt-2 text-sm text-gray-500">
           {{ d.post.published_at | date: 'longDate' }}
           @if (d.post.author) {
@@ -126,7 +126,7 @@ export function wrapIndex(current: number, delta: number, count: number): number
       }
       @if (d.related.length) {
         <section class="container-x max-w-5xl border-t border-gray-200 pt-10 pb-12">
-          <h2 class="h-3 mb-4">More inspiration</h2>
+          <h2 class="heading-3 mb-4">More inspiration</h2>
           <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             @for (r of d.related; track r.id) {
               <a [routerLink]="['/blog', r.slug]" class="group block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
@@ -157,7 +157,7 @@ export function wrapIndex(current: number, delta: number, count: number): number
       </div>
     } @else {
       <div class="container-x empty-state my-16">
-        <h1 class="h-2">Post not found</h1>
+        <h1 class="heading-2">Post not found</h1>
         <p class="text-muted mt-2">It may have been moved or unpublished.</p>
         <a routerLink="/blog" class="btn-primary mt-6">Back to blog</a>
       </div>

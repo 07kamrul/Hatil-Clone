@@ -1,12 +1,9 @@
-import { DOCUMENT, NgOptimizedImage, isPlatformBrowser } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   HostListener,
-  PLATFORM_ID,
   computed,
-  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -15,6 +12,7 @@ import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { Api } from '../../core/api';
+import { useScrollLock } from '../../core/scroll-lock';
 import { CartStore } from '../../core/cart-store';
 import { CategoryNode } from '../../core/models';
 import { WishlistStore } from '../../core/lists';
@@ -248,18 +246,9 @@ export class Header {
 
   protected readonly navTree = computed(() => orderNav(this.tree()));
 
-  private readonly document = inject(DOCUMENT);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-
   constructor() {
     // Lock page scroll while an overlay is open (browser only; SSR never touches body).
-    effect(() => {
-      const locked = this.drawer() || this.searchOpen();
-      if (this.isBrowser) this.document.body.style.overflow = locked ? 'hidden' : '';
-    });
-    inject(DestroyRef).onDestroy(() => {
-      if (this.isBrowser) this.document.body.style.overflow = '';
-    });
+    useScrollLock(computed(() => this.drawer() || this.searchOpen()));
   }
 
   @HostListener('window:scroll')

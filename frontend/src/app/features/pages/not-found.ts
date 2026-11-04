@@ -10,7 +10,7 @@ import { Seo } from '../../core/seo';
   template: `
     <div class="container-x flex min-h-[60vh] flex-col items-center justify-center py-16 text-center">
       <p class="text-6xl font-bold text-brand sm:text-7xl" aria-hidden="true">404</p>
-      <h1 class="h-2 mt-3">Page not found</h1>
+      <h1 class="heading-2 mt-3">Page not found</h1>
       <p class="text-muted mt-2 max-w-md">The page you are looking for does not exist or has moved.</p>
       <div class="mt-8 flex w-full max-w-sm flex-col gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:justify-center">
         <a routerLink="/" class="btn-primary">Go home</a>

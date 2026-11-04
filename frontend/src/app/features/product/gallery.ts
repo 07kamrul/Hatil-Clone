@@ -1,7 +1,8 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, input, signal, viewChild } from '@angular/core';
 
 import { ProductImage } from '../../core/models';
+import { useScrollLock } from '../../core/scroll-lock';
 import { Icon } from '../../shared/ui/icon';
 
 const ZOOM_SCALE = 2.2;
@@ -11,6 +12,7 @@ const SWIPE_PX = 40;
 @Component({
   selector: 'app-gallery',
   imports: [NgOptimizedImage, Icon],
+  host: { '(document:keydown.escape)': 'closeLightbox()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-3 md:flex-row-reverse">
@@ -51,8 +53,8 @@ const SWIPE_PX = 40;
 
     @if (lightbox() && current(); as img) {
       <div class="fixed inset-0 z-[90] flex items-center justify-center bg-black/90 p-4" role="dialog" aria-modal="true"
-           aria-label="Image viewer" (touchstart)="touchStart($event)" (touchend)="touchEnd($event)" (keydown.escape)="lightbox.set(false)" (click)="lightbox.set(false)">
-        <button type="button" class="absolute right-2 top-2 z-10 flex size-12 items-center justify-center text-white" aria-label="Close" (click)="lightbox.set(false)"><app-icon name="close" [size]="32" /></button>
+           aria-label="Image viewer" (touchstart)="touchStart($event)" (touchend)="touchEnd($event)" (click)="lightbox.set(false)">
+        <button #closeBtn type="button" class="absolute right-2 top-2 z-10 flex size-12 items-center justify-center text-white" aria-label="Close" (click)="lightbox.set(false)"><app-icon name="close" [size]="32" /></button>
         @if (images().length > 1) {
           <button type="button" class="absolute left-1 z-10 flex size-12 rotate-180 items-center justify-center text-white sm:left-4" aria-label="Previous image" (click)="step(-1, $event)"><app-icon name="chevron" [size]="36" /></button>
           <button type="button" class="absolute right-1 z-10 flex size-12 items-center justify-center text-white sm:right-4" aria-label="Next image" (click)="step(1, $event)"><app-icon name="chevron" [size]="36" /></button>
@@ -73,11 +75,29 @@ export class Gallery {
   protected readonly origin = signal('50% 50%');
   protected readonly current = computed(() => this.images()[this.index()] ?? null);
 
+  private readonly closeBtn = viewChild<ElementRef<HTMLButtonElement>>('closeBtn');
+  private returnFocus: HTMLElement | null = null;
+
   constructor() {
     effect(() => {
       this.images();
       this.index.set(0);
     });
+    useScrollLock(this.lightbox);
+    // Move focus into the viewer when it opens; give it back to the opener when it closes.
+    effect(() => {
+      const btn = this.closeBtn()?.nativeElement;
+      if (!btn) return;
+      this.returnFocus = document.activeElement as HTMLElement | null;
+      btn.focus();
+    });
+  }
+
+  protected closeLightbox(): void {
+    if (!this.lightbox()) return;
+    this.lightbox.set(false);
+    this.returnFocus?.focus();
+    this.returnFocus = null;
   }
 
   protected move(event: MouseEvent): void {

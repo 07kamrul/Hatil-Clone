@@ -18,7 +18,7 @@ const PAGE_SIZE = 9;
   template: `
     <app-breadcrumbs [crumbs]="[{ label: 'Inspiration' }]" />
     <div class="container-x pb-12">
-      <h1 class="h-1 mb-2">Inspiration & ideas</h1>
+      <h1 class="heading-1 mb-2">Inspiration & ideas</h1>
       <p class="text-muted mb-8 max-w-2xl">Room guides, styling ideas and care tips from our team.</p>
       @if (posts.value(); as p) {
         <div class="grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">

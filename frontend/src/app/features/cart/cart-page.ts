@@ -21,11 +21,11 @@ const CUSTOMER_KEY = 'checkout.customer.v1';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container-x page-y">
-      <h1 class="h-1 mb-6">Your cart @if (!cart.isEmpty()) { <span class="text-muted font-normal">({{ cart.count() }})</span> }</h1>
+      <h1 class="heading-1 mb-6">Your cart @if (!cart.isEmpty()) { <span class="text-muted font-normal">({{ cart.count() }})</span> }</h1>
       @if (cart.isEmpty()) {
         <div class="empty-state">
           <app-icon name="cart" [size]="40" />
-          <p class="h-3">Your cart is empty.</p>
+          <p class="heading-3">Your cart is empty.</p>
           <p class="text-muted">Browse the catalog and add pieces you love.</p>
           <a routerLink="/products" class="btn-primary mt-2">Start shopping</a>
         </div>
@@ -58,7 +58,7 @@ const CUSTOMER_KEY = 'checkout.customer.v1';
           </ul>
 
           <aside class="card h-fit p-4 sm:p-5 lg:sticky lg:top-24">
-            <h2 class="h-3 mb-3">Order summary</h2>
+            <h2 class="heading-3 mb-3">Order summary</h2>
             <div class="flex justify-between text-sm"><span>Items</span><span>{{ cart.count() }}</span></div>
             <div class="mt-2 flex justify-between border-t border-gray-200 pt-2 text-lg font-bold"><span>Total</span><span class="text-brand">{{ cart.total() | money }}</span></div>
             <p class="mt-1 text-xs text-gray-500">Delivery charge and final price are confirmed on WhatsApp.</p>

@@ -15,7 +15,7 @@ import { Breadcrumbs } from '../../shared/ui/breadcrumbs';
   template: `
     <app-breadcrumbs [crumbs]="[{ label: 'FAQ' }]" />
     <div class="container-x max-w-3xl pb-12">
-      <h1 class="h-1 mb-2">Frequently asked questions</h1>
+      <h1 class="heading-1 mb-2">Frequently asked questions</h1>
       <p class="text-muted mb-8">Ordering on WhatsApp, delivery, payment and warranty — answered.</p>
       @for (group of groups(); track group.name) {
         <section class="mb-8" [attr.aria-label]="group.name">

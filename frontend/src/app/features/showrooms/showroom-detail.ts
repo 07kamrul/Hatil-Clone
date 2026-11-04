@@ -20,7 +20,7 @@ import { ShowroomMap } from './showroom-map';
       <app-breadcrumbs [crumbs]="[{ label: 'Showrooms', link: ['/showrooms'] }, { label: s.name }]" />
       <div class="container-x grid gap-8 pb-12 lg:grid-cols-2">
         <div class="min-w-0">
-          <h1 class="h-1 break-words">{{ s.name }}</h1>
+          <h1 class="heading-1 break-words">{{ s.name }}</h1>
           <p class="text-sm uppercase tracking-wide text-gray-500">{{ s.city }}</p>
           @if (s.image) {
             <div class="relative mt-4 aspect-[16/10] overflow-hidden rounded-lg"><img [ngSrc]="s.image" [alt]="s.name" fill priority sizes="(min-width:1024px) 50vw, 100vw" class="object-cover" /></div>
@@ -45,7 +45,7 @@ import { ShowroomMap } from './showroom-map';
       </div>
     } @else {
       <div class="container-x empty-state my-16">
-        <h1 class="h-2">Showroom not found</h1>
+        <h1 class="heading-2">Showroom not found</h1>
         <p class="text-muted mt-2">It may have closed or moved.</p>
         <a routerLink="/showrooms" class="btn-primary mt-6">All showrooms</a>
       </div>

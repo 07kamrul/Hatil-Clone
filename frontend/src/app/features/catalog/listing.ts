@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
@@ -8,6 +8,7 @@ import { catchError, of } from 'rxjs';
 import { Api } from '../../core/api';
 import { CategoryDetail, ProductFacets, ProductQuery, SortKey } from '../../core/models';
 import { Seo } from '../../core/seo';
+import { useScrollLock } from '../../core/scroll-lock';
 import { Breadcrumbs, Crumb } from '../../shared/ui/breadcrumbs';
 import { MoneyPipe } from '../../shared/ui/money-pipe';
 import { Pagination } from '../../shared/ui/pagination';
@@ -34,11 +35,12 @@ const num = (value: string | null): number | null => {
   selector: 'app-listing',
   imports: [RouterLink, FormsModule, NgTemplateOutlet, Breadcrumbs, ProductCardView, Pagination, MoneyPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:keydown.escape)': 'closeFilters()' },
   template: `
     <app-breadcrumbs [crumbs]="crumbs()" />
     <div class="container-x pb-10">
       <header class="mb-4">
-        <h1 class="h-1 break-words">{{ heading() }}</h1>
+        <h1 class="heading-1 break-words">{{ heading() }}</h1>
         @if (category.value(); as c) {
           @if (c.children.length) {
             <ul class="scroll-x mt-3 gap-2 sm:flex-wrap sm:overflow-visible">
@@ -51,7 +53,7 @@ const num = (value: string | null): number | null => {
       </header>
 
       <div class="sticky top-[68px] z-20 -mx-4 mb-4 flex items-center justify-between gap-2 border-y border-gray-200 bg-white/95 px-4 py-2 backdrop-blur sm:mx-0 sm:px-0 lg:static lg:bg-transparent lg:py-3 lg:backdrop-blur-none">
-        <button type="button" class="btn-outline shrink-0 lg:hidden" (click)="filtersOpen.set(true)" [attr.aria-expanded]="filtersOpen()" aria-controls="listing-filters">
+        <button #filtersBtn type="button" class="btn-outline shrink-0 lg:hidden" (click)="filtersOpen.set(true)" [attr.aria-expanded]="filtersOpen()" aria-controls="listing-filters">
           Filters @if (activeFilterCount()) { <span class="pill bg-brand text-white">{{ activeFilterCount() }}</span> }
         </button>
         <p class="hidden text-sm text-gray-600 sm:block" aria-live="polite">
@@ -71,11 +73,11 @@ const num = (value: string | null): number | null => {
         @if (filtersOpen()) {
           <button type="button" class="fixed inset-0 z-40 bg-black/50 lg:hidden" aria-label="Close filters" (click)="filtersOpen.set(false)"></button>
         }
-        <aside id="listing-filters" [class.hidden]="!filtersOpen()" (keydown.escape)="filtersOpen.set(false)"
+        <aside id="listing-filters" [class.hidden]="!filtersOpen()"
                class="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] space-y-6 overflow-y-auto overscroll-contain bg-white px-4 pb-24 shadow-xl lg:static lg:z-auto lg:!block lg:w-auto lg:max-w-none lg:overflow-visible lg:p-0 lg:shadow-none" aria-label="Filters">
           <div class="sticky top-0 z-10 -mx-4 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2 lg:hidden">
-            <span class="h-3">Filters</span>
-            <button type="button" class="icon-btn min-h-11 min-w-11 text-xl" aria-label="Close filters" (click)="filtersOpen.set(false)">&times;</button>
+            <span class="heading-3">Filters</span>
+            <button #filtersClose type="button" class="icon-btn min-h-11 min-w-11 text-xl" aria-label="Close filters" (click)="filtersOpen.set(false)">&times;</button>
           </div>
           @if (activeFilterCount()) { <button type="button" class="min-h-11 text-sm text-brand underline" (click)="clearFilters()">Clear all filters</button> }
 
@@ -126,7 +128,7 @@ const num = (value: string | null): number | null => {
               <app-pagination [page]="p.page" [pages]="p.pages" (pageChange)="update({ page: $event === 1 ? null : $event })" />
             } @else {
               <div class="empty-state">
-                <p class="h-3">No products match your filters.</p>
+                <p class="heading-3">No products match your filters.</p>
                 <p class="text-muted">Try removing a filter or browsing all products.</p>
                 @if (activeFilterCount()) {
                   <button type="button" class="btn-primary mt-2" (click)="clearFilters()">Clear filters</button>
@@ -241,7 +243,21 @@ export class Listing {
       + (q.on_sale ? 1 : 0);
   });
 
+  private readonly filtersBtn = viewChild<ElementRef<HTMLButtonElement>>('filtersBtn');
+  private readonly filtersClose = viewChild<ElementRef<HTMLButtonElement>>('filtersClose');
+
+  /** Mobile filter drawer: Esc closes it and focus returns to the "Filters" button. */
+  protected closeFilters(): void {
+    if (!this.filtersOpen()) return;
+    this.filtersOpen.set(false);
+    this.filtersBtn()?.nativeElement.focus();
+  }
+
   constructor() {
+    useScrollLock(this.filtersOpen);
+    effect(() => {
+      if (this.filtersOpen()) setTimeout(() => this.filtersClose()?.nativeElement.focus());
+    });
     effect(() => {
       const q = this.query();
       this.minPrice = q.min_price ?? null;

@@ -36,7 +36,7 @@ export function variantLabel(v: ProductVariant): string {
         <app-gallery [images]="p.images" [alt]="p.name" class="min-w-0" />
 
         <div class="min-w-0">
-          <h1 class="h-1 break-words">{{ p.name }}</h1>
+          <h1 class="heading-1 break-words">{{ p.name }}</h1>
           <p class="mt-1 text-sm text-gray-500">SKU: <span>{{ p.sku }}</span></p>
 
           <div class="mt-4 flex flex-wrap items-baseline gap-3">
@@ -148,11 +148,11 @@ export function variantLabel(v: ProductVariant): string {
       </section>
 
       @if (related.value()?.length) {
-        <section class="container-x pb-8"><h2 class="h-2 mb-4">You may also like</h2>
+        <section class="container-x pb-8"><h2 class="heading-2 mb-4">You may also like</h2>
           <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">@for (r of related.value(); track r.id) { <app-product-card [product]="r" /> }</div></section>
       }
       @if (recent.value()?.length) {
-        <section class="container-x pb-8"><h2 class="h-2 mb-4">Recently viewed</h2>
+        <section class="container-x pb-8"><h2 class="heading-2 mb-4">Recently viewed</h2>
           <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">@for (r of recent.value(); track r.id) { <app-product-card [product]="r" /> }</div></section>
       }
     } @else if (product.isLoading()) {
@@ -166,7 +166,7 @@ export function variantLabel(v: ProductVariant): string {
     } @else {
       <div class="container-x page-y">
         <div class="empty-state">
-        <h1 class="h-2">Product not found</h1>
+        <h1 class="heading-2">Product not found</h1>
         <p class="text-muted">It may have been removed or is no longer available.</p>
         <a routerLink="/products" class="btn-primary mt-2">Browse products</a>
         </div>

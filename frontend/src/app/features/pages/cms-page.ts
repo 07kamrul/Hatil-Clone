@@ -17,7 +17,7 @@ import { Breadcrumbs } from '../../shared/ui/breadcrumbs';
     @if (page.value(); as p) {
       <app-breadcrumbs [crumbs]="[{ label: p.title }]" />
       <article class="container-x max-w-3xl pb-12">
-        <h1 class="h-1 mb-6 break-words">{{ p.title }}</h1>
+        <h1 class="heading-1 mb-6 break-words">{{ p.title }}</h1>
         <div class="prose-content max-w-prose break-words [&_img]:h-auto [&_img]:max-w-full [&_iframe]:max-w-full [&_table]:block [&_table]:overflow-x-auto" [innerHTML]="p.body_html"></div>
       </article>
     } @else if (page.isLoading()) {
@@ -27,7 +27,7 @@ import { Breadcrumbs } from '../../shared/ui/breadcrumbs';
       </div>
     } @else {
       <div class="container-x empty-state my-16">
-        <h1 class="h-2">Page not found</h1>
+        <h1 class="heading-2">Page not found</h1>
         <p class="text-muted mt-2">This page doesn't exist or has moved.</p>
         <a routerLink="/" class="btn-primary mt-6">Go home</a>
       </div>

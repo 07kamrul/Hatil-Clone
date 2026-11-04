@@ -16,7 +16,7 @@ import { ProductCardView } from '../../shared/ui/product-card';
   template: `
     <div class="container-x page-y">
       <div class="mb-6 flex items-center justify-between gap-3">
-        <h1 class="h-1">Wishlist</h1>
+        <h1 class="heading-1">Wishlist</h1>
         @if (wishlist.count()) { <button type="button" class="min-h-11 shrink-0 text-sm text-red-600 hover:underline" (click)="wishlist.clear()">Clear all</button> }
       </div>
       @if (products.value()?.length) {
@@ -29,7 +29,7 @@ import { ProductCardView } from '../../shared/ui/product-card';
         </div>
       } @else {
         <div class="empty-state">
-          <p class="h-3">Your wishlist is empty</p>
+          <p class="heading-3">Your wishlist is empty</p>
           <p class="text-muted">Tap the heart on a product to save it here.</p>
           <a routerLink="/products" class="btn-primary mt-2">Browse products</a>
         </div>
