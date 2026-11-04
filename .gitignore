@@ -19,3 +19,7 @@ backend/import.db
 
 # Dokploy real env files (commit only *.env.example)
 deploy/dokploy/*.env
+
+# Saved Facebook page (source for scripts.seed_company) and local DB backups
+fb_page/
+*.db.bak*
