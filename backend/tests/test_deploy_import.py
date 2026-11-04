@@ -241,7 +241,6 @@ def test_status_requires_admin(client: TestClient) -> None:
 
 
 def test_status_reports_states(client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from app.api.v1.admin import imports as imports_module
 
     monkeypatch.setenv("DATA_DIR", str(tmp_path / "data"))
     data_dir = Path(os.environ["DATA_DIR"])
