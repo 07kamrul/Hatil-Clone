@@ -67,8 +67,19 @@ DB_URL_PLAIN="${DATABASE_URL/+asyncpg/}"
 DB_URL_PLAIN="${DB_URL_PLAIN/+psycopg/}"   # pg_dump wants plain postgresql:// (no SQLAlchemy driver suffix)
 BACKUP_FILE="$BACKUP_DIR/hatil-$RUN_TS.sql.gz"
 RAW_DUMP="$BACKUP_DIR/.hatil-$RUN_TS.sql"
+
+# pg_dump refuses to dump a server newer than itself, so compare majors first to give an actionable hint.
+server_major="$(python -c 'import os;from sqlalchemy import create_engine,text;e=create_engine(os.environ["DATABASE_URL"]);print(e.connect().execute(text("SHOW server_version")).scalar().split(".")[0])' 2>/dev/null || true)"
+dump_major="$(pg_dump --version 2>/dev/null | sed -n 's/.*PostgreSQL) \([0-9]*\).*/\1/p')"
+version_mismatch=no
+if [ -n "$server_major" ] && [ -n "$dump_major" ] && [ "$server_major" != "$dump_major" ]; then
+  version_mismatch=yes
+  log "WARNING: pg_dump major $dump_major != server major $server_major; rebuild the image with --build-arg PG_MAJOR=$server_major"
+fi
+
 log "backing up database to $BACKUP_FILE"
 if ! pg_dump --clean --if-exists --no-owner --no-privileges "$DB_URL_PLAIN" > "$RAW_DUMP"; then
+  [ "$version_mismatch" = "yes" ] && log "pg_dump client ($dump_major) does not match server ($server_major)"
   log "FATAL: pg_dump failed; not scraping"
   rm -f "$RAW_DUMP"
   exit 1
@@ -84,13 +95,6 @@ ls -1t "$BACKUP_DIR"/hatil-*.sql.gz 2>/dev/null | tail -n +$((KEEP_BACKUPS + 1))
   log "pruning old backup $old"
   rm -f "$old"
 done
-
-# --- pg_dump vs server major version (warn only; the apt package is pinned at image build time) ---
-server_major="$(python -c 'import os;from sqlalchemy import create_engine,text;e=create_engine(os.environ["DATABASE_URL"]);print(e.connect().execute(text("SHOW server_version")).scalar().split(".")[0])' 2>/dev/null || true)"
-dump_major="$(pg_dump --version 2>/dev/null | sed -n 's/.*PostgreSQL) \([0-9]*\).*/\1/p')"
-if [ -n "$server_major" ] && [ -n "$dump_major" ] && [ "$server_major" != "$dump_major" ]; then
-  log "WARNING: pg_dump major $dump_major != server major $server_major; rebuild the image with postgresql-client-$server_major if dumps misbehave"
-fi
 
 # --- mode: resume an interrupted import, or start from scratch ----------------------------------
 ROWS="$(python -m scripts.scrape_log_count 2>/dev/null || echo 0)"

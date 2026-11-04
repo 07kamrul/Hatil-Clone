@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Dump the production database to backups/hatil-YYYY-MM-DD.sql before a catalogue import.
-# Needs `pg_dump` (same major version as the server) or Docker (uses postgres:$PG_MAJOR-alpine, default 16).
+# Needs `pg_dump` (same major version as the server) or Docker (uses postgres:$PG_MAJOR-alpine, default 18).
 # DATABASE_URL comes from the environment, else from deploy/dokploy/backend.env (gitignored).
 #   ./scripts/backup_db.sh
 # Restore (plain SQL with --clean, so it REPLACES current data, including admin changes made since the dump):
@@ -30,7 +30,7 @@ if command -v pg_dump >/dev/null 2>&1; then
   pg_dump "${DUMP_FLAGS[@]}" "$URL" -f "$OUT"
 else
   command -v docker >/dev/null 2>&1 || { echo "need pg_dump or docker" >&2; exit 1; }
-  docker run --rm "postgres:${PG_MAJOR:-16}-alpine" pg_dump "${DUMP_FLAGS[@]}" "$URL" > "$OUT"
+  docker run --rm "postgres:${PG_MAJOR:-18}-alpine" pg_dump "${DUMP_FLAGS[@]}" "$URL" > "$OUT"
 fi
 
 [ -s "$OUT" ] || { echo "dump is empty" >&2; exit 1; }

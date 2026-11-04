@@ -4,12 +4,18 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 \
     PIP_ROOT_USER_ACTION=ignore PIP_DISABLE_PIP_VERSION_CHECK=1
 WORKDIR /app
 
-# postgresql-client: pg_dump for the automatic pre-import DB backup (scripts/deploy_import.sh).
-# Pinned to the server's major version -- currently 15 (Debian bookworm default). The script re-checks
-# `SHOW server_version` at runtime and warns on a mismatch; if the server is another major (e.g. 16),
-# change both lines to postgresql-client-<major> and confirm a dump before relying on it.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      libjpeg62-turbo libwebp7 postgresql-client util-linux \
+# postgresql-client-$PG_MAJOR: pg_dump for the automatic pre-import DB backup (scripts/deploy_import.sh).
+# pg_dump refuses servers newer than itself, and Debian trixie only ships 17, so install from PGDG.
+# Keep PG_MAJOR >= the server's major (override with --build-arg PG_MAJOR=<n>); the script re-checks
+# `SHOW server_version` at runtime and logs the mismatch.
+ARG PG_MAJOR=18
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl gnupg \
+    && install -d /usr/share/keyrings \
+    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/pgdg.gpg \
+    && . /etc/os-release \
+    && echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update && apt-get install -y --no-install-recommends \
+      libjpeg62-turbo libwebp7 "postgresql-client-${PG_MAJOR}" util-linux \
     && rm -rf /var/lib/apt/lists/*
 
 # INSTALL_DEV=true adds pytest/ruff so `docker compose run --rm backend pytest` works.

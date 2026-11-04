@@ -42,7 +42,7 @@ STAMP=$(date +%Y%m%d-%H%M)
 docker run --rm -v hatil-uploads:/data -v "$PWD":/backup alpine \
   tar czf "/backup/uploads-pre-import-$STAMP.tgz" -C /data .
 ```
-`backup_db.sh` uses `pg_dump` if installed, else Docker (`postgres:16-alpine`, override with `PG_MAJOR`), reads
+`backup_db.sh` uses `pg_dump` if installed, else Docker (`postgres:18-alpine`, override with `PG_MAJOR`), reads
 `DATABASE_URL` from the environment or `deploy/dokploy/backend.env`, and refuses to run unless `backups/` is gitignored.
 **Restore** (also reverts anything admins changed since the dump, so use only to undo a bad import):
 ```bash

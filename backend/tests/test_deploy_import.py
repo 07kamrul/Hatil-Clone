@@ -38,7 +38,7 @@ esac
 """
 
 PG_DUMP_SHIM = r"""#!/usr/bin/env bash
-if [ "$1" = "--version" ]; then echo 'pg_dump (PostgreSQL) 15.2'; exit 0; fi
+if [ "$1" = "--version" ]; then echo "pg_dump (PostgreSQL) ${PGDUMP_VERSION:-15.2}"; exit 0; fi
 echo "$*" > "$PGDUMP_ARGS_FILE"
 [ "${PGDUMP_RC:-0}" != "0" ] && exit "${PGDUMP_RC}"
 [ "${PGDUMP_EMPTY:-0}" = "1" ] || echo "-- fake dump --"
@@ -150,6 +150,14 @@ def test_pg_dump_failure_aborts_before_scraping(paths: dict[str, Path]) -> None:
     assert "pg_dump failed" in res.stdout
     assert scraper_modes(paths) == []
     assert not (paths["data"] / "import.done").exists()
+
+
+def test_pg_dump_version_mismatch_logs_rebuild_hint(paths: dict[str, Path]) -> None:
+    res = run_import(paths, CATALOG_IMPORT="auto", PGDUMP_RC=1, PGDUMP_VERSION="17.1")
+    assert res.returncode == 1
+    assert "PG_MAJOR=15" in res.stdout
+    assert "does not match server" in res.stdout
+    assert scraper_modes(paths) == []
 
 
 def test_empty_backup_aborts_before_scraping(paths: dict[str, Path]) -> None:
