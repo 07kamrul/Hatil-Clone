@@ -1,6 +1,6 @@
 /** Declarative definitions for the simple admin CRUD screens (one generic list + form). */
 
-export type FieldType = 'text' | 'textarea' | 'html' | 'number' | 'checkbox' | 'select' | 'image' | 'datetime' | 'color';
+export type FieldType = 'text' | 'textarea' | 'html' | 'number' | 'checkbox' | 'select' | 'image' | 'datetime' | 'color' | 'maplink';
 
 export interface FieldDef {
   key: string;
@@ -13,6 +13,9 @@ export interface FieldDef {
   /** Number inputs: allow decimals. */
   step?: string;
 }
+
+/** Form model keys a `maplink` field writes in addition to its own value. */
+export const MAPLINK_COORD_KEYS = ['latitude', 'longitude'] as const;
 
 export interface ColumnDef { key: string; label: string; type?: 'image' | 'bool' | 'date' | 'color' }
 
@@ -85,8 +88,7 @@ export const RESOURCES: Record<string, ResourceDef> = {
       { key: 'phone', label: 'Phone', type: 'text' }, { key: 'email', label: 'Email', type: 'text' },
       { key: 'opening_hours', label: 'Opening hours', type: 'text', help: 'e.g. 10:00 AM – 8:00 PM' },
       { key: 'off_days', label: 'Off days', type: 'text' },
-      { key: 'latitude', label: 'Latitude', type: 'number', step: 'any' },
-      { key: 'longitude', label: 'Longitude', type: 'number', step: 'any' },
+      { key: 'maplink', label: 'Google Maps link', type: 'maplink', help: 'Paste the link from Google Maps "Share" — the pin is placed automatically.', },
       { key: 'image', label: 'Photo', type: 'image', folder: 'showrooms' },
       { key: 'sort_order', label: 'Sort order', type: 'number' },
       { key: 'is_active', label: 'Active', type: 'checkbox' },
@@ -130,5 +132,5 @@ export const RESOURCES: Record<string, ResourceDef> = {
 };
 
 export const DEFAULTS: Record<FieldType, unknown> = {
-  text: '', textarea: '', html: '', number: null, checkbox: false, select: '', image: null, datetime: '', color: '#000000',
+  text: '', textarea: '', html: '', number: null, checkbox: false, select: '', image: null, datetime: '', color: '#000000', maplink: '',
 };

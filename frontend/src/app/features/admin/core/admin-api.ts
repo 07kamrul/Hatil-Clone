@@ -101,6 +101,11 @@ export class AdminApi {
     return this.http.put<Record<string, unknown>>(`${this.base}/settings`, { values });
   }
   dashboard<T>(): Observable<T> { return this.http.get<T>(`${this.base}/dashboard`); }
+
+  /** Follow a Google Maps short link server-side and return its coordinates. */
+  resolveMapsLink(url: string): Observable<{ latitude: number; longitude: number }> {
+    return this.http.get<{ latitude: number; longitude: number }>(`${this.base}/maps/resolve`, { params: { url } });
+  }
   changePassword(current: string, next: string): Observable<Message> {
     return this.http.post<Message>(`${this.base.replace(/\/admin$/, '')}/auth/change-password`, { current_password: current, new_password: next });
   }

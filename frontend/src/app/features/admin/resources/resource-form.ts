@@ -7,7 +7,8 @@ import { AdminApi, Row, apiError } from '../core/admin-api';
 import { HtmlEditor } from '../ui/html-editor';
 import { FormActions } from '../ui/form-actions';
 import { ImageInput } from '../ui/image-input';
-import { DEFAULTS, FieldDef, RESOURCES } from './resource-config';
+import { MapLinkField } from '../ui/map-link-field';
+import { DEFAULTS, FieldDef, MAPLINK_COORD_KEYS, RESOURCES } from './resource-config';
 
 /** ISO datetime ⇄ value of <input type="datetime-local"> (local time, no seconds). */
 export function toLocalInput(iso: unknown): string {
@@ -25,11 +26,19 @@ export function fromLocalInput(value: unknown): string | null {
 }
 
 /** Field types that span both columns of the md+ grid. */
-const WIDE_TYPES = new Set(['textarea', 'html', 'image']);
+const WIDE_TYPES = new Set(['textarea', 'html', 'image', 'maplink']);
+
+/** Map a form model's coordinate keys to the API payload (empty → null, strings → numbers). */
+export function maplinkCoords(model: Record<string, unknown>, keys: readonly string[]): Record<string, unknown> {
+  return Object.fromEntries(keys.map((key) => {
+    const value = model[key];
+    return [key, value === '' || value === null || value === undefined ? null : Number(value)];
+  }));
+}
 
 @Component({
   selector: 'app-resource-form',
-  imports: [FormsModule, RouterLink, HtmlEditor, ImageInput, FormActions],
+  imports: [FormsModule, RouterLink, HtmlEditor, ImageInput, FormActions, MapLinkField],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <a [routerLink]="['..']" class="inline-flex min-h-11 items-center text-sm text-gray-600 hover:underline">← Back to {{ def().title }}</a>
@@ -55,6 +64,7 @@ const WIDE_TYPES = new Set(['textarea', 'html', 'image']);
                   </select>
                 }
                 @case ('image') { <app-image-input [name]="f.key" [folder]="f.folder || 'misc'" [(ngModel)]="model[f.key]" /> }
+                @case ('maplink') { <app-map-link-field [model]="model" /> }
                 @case ('datetime') { <input [id]="'f-' + f.key" type="datetime-local" [name]="f.key" class="input" [(ngModel)]="model[f.key]" /> }
                 @case ('color') { <input [id]="'f-' + f.key" type="color" [name]="f.key" class="h-11 w-20 rounded border" [(ngModel)]="model[f.key]" /> }
                 @default { <input [id]="'f-' + f.key" type="text" [name]="f.key" class="input" [(ngModel)]="model[f.key]" [required]="!!f.required" /> }
@@ -100,7 +110,11 @@ export class ResourceForm {
       this.loading.set(true);
       this.api.get<Row>(def.api, Number(this.id())).subscribe({
         next: (row) => {
-          this.model = Object.fromEntries(def.fields.map((f) => [f.key, f.type === 'datetime' ? toLocalInput(row[f.key]) : (row[f.key] ?? DEFAULTS[f.type])]));
+          const model = Object.fromEntries(def.fields.map((f) => [f.key, f.type === 'datetime' ? toLocalInput(row[f.key]) : (row[f.key] ?? DEFAULTS[f.type])]));
+          if (def.fields.some((f) => f.type === 'maplink')) {
+            for (const key of MAPLINK_COORD_KEYS) model[key] = row[key] ?? null;
+          }
+          this.model = model;
           this.loading.set(false);
         },
         error: (err: unknown) => {
@@ -113,7 +127,14 @@ export class ResourceForm {
 
   private payload(): Record<string, unknown> {
     const out: Record<string, unknown> = {};
-    for (const f of this.def().fields) out[f.key] = this.normalize(f, this.model[f.key]);
+    for (const f of this.def().fields) {
+      // maplink fields carry no payload of their own; they write into the coordinate keys instead.
+      if (f.type === 'maplink') continue;
+      out[f.key] = this.normalize(f, this.model[f.key]);
+    }
+    if (this.def().fields.some((f) => f.type === 'maplink')) {
+      Object.assign(out, maplinkCoords(this.model, MAPLINK_COORD_KEYS));
+    }
     return out;
   }
 
