@@ -12,12 +12,13 @@ describe('pickActiveShowroom', () => {
     expect(pickActiveShowroom(rooms, 3)?.id).toBe(3);
   });
 
-  it('falls back to the first located showroom', () => {
+  it('falls back to the first located showroom when nothing is selected', () => {
     expect(pickActiveShowroom(rooms, null)?.id).toBe(2);
-    expect(pickActiveShowroom(rooms, 1)?.id).toBe(2);
   });
 
-  it('returns null when no showroom has coordinates', () => {
-    expect(pickActiveShowroom([room(1, null)], null)).toBeNull();
+  it('falls back to a showroom without coordinates so the address embed can render', () => {
+    expect(pickActiveShowroom([room(1, null)], null)?.id).toBe(1);
+    expect(pickActiveShowroom([room(1, null)], 1)?.id).toBe(1);
+    expect(pickActiveShowroom([room(1, null), room(2, 25.3)], 1)?.id).toBe(1);
   });
 });

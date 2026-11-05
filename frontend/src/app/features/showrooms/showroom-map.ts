@@ -7,10 +7,11 @@ import { Icon } from '../../shared/ui/icon';
 
 const SHOWROOM_ZOOM = 15;
 
-/** First showroom with coordinates, preferring the selected one. */
+/** Selected showroom if located, else first with coordinates, else any showroom (map falls back to an address embed). */
 export function pickActiveShowroom(showrooms: readonly Showroom[], selected: number | null): Showroom | null {
   const located = showrooms.filter((s) => s.latitude !== null && s.longitude !== null);
-  return located.find((s) => s.id === selected) ?? located[0] ?? null;
+  const byId = (id: number | null): Showroom | undefined => (id === null ? undefined : showrooms.find((s) => s.id === id));
+  return located.find((s) => s.id === selected) ?? byId(selected) ?? located[0] ?? showrooms[0] ?? null;
 }
 
 /** Google Maps embed for one showroom, styled like the contact page's "Find us" map. */
