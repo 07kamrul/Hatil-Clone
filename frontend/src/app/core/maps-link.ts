@@ -4,6 +4,7 @@ const AT_COORDS = /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/;
 const QUERY_COORDS = /[?&](?:q|ll|query|destination)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/;
 const PLACE_COORDS = /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/;
 const MAPS_HOSTS = ['google.com', 'maps.google', 'goo.gl'];
+const SEARCH_ZOOM = 15;
 
 export interface MapPoint {
   lat: number;
@@ -37,4 +38,14 @@ export function mapEmbedUrl(point: MapPoint, zoom: number): string {
 /** "Get directions" deep link into the Google Maps app/site. */
 export function mapDirectionsUrl(point: MapPoint): string {
   return `https://www.google.com/maps/dir/?api=1&destination=${point.lat},${point.lng}`;
+}
+
+/** Embed by place name / address, for entries without stored coordinates. */
+export function mapSearchEmbedUrl(query: string): string {
+  return `https://www.google.com/maps?q=${encodeURIComponent(query)}&z=${SEARCH_ZOOM}&hl=en&output=embed`;
+}
+
+/** "Open in Google Maps" link for a place name / address. */
+export function mapSearchUrl(query: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }

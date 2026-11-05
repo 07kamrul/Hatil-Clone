@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
-import { MapPoint, mapDirectionsUrl, mapEmbedUrl } from '../../core/maps-link';
+import { MapPoint, mapDirectionsUrl, mapEmbedUrl, mapSearchEmbedUrl, mapSearchUrl } from '../../core/maps-link';
 import { Showroom } from '../../core/models';
 import { Icon } from '../../shared/ui/icon';
 
@@ -19,9 +19,9 @@ export function pickActiveShowroom(showrooms: readonly Showroom[], selected: num
   imports: [Icon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (point(); as p) {
+    @if (embedUrl(); as src) {
       <iframe class="h-[50vh] max-h-[420px] min-h-[280px] w-full rounded-lg border border-gray-200 bg-gray-100 lg:h-[420px]"
-              [src]="embedUrl()" loading="lazy" [title]="'Map to ' + showroom()!.name"
+              [src]="src" loading="lazy" [title]="'Map to ' + showroom()!.name"
               referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
       @if (showDetails()) {
         <p class="mt-3 flex items-start gap-2 text-sm text-gray-600"><app-icon name="pin" [size]="16" class="mt-0.5 shrink-0" /> {{ showroom()!.address }}</p>
@@ -47,11 +47,20 @@ export class ShowroomMap {
     return s && s.latitude !== null && s.longitude !== null ? { lat: s.latitude, lng: s.longitude } : null;
   });
   protected readonly embedUrl = computed(() => {
+    const s = this.showroom();
+    if (!s) return null;
     const p = this.point();
-    return p ? this.sanitizer.bypassSecurityTrustResourceUrl(mapEmbedUrl(p, SHOWROOM_ZOOM)) : null;
+    const url = p
+      ? mapEmbedUrl(p, SHOWROOM_ZOOM)
+      : s.address
+        ? mapSearchEmbedUrl(s.address)
+        : null;
+    return url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : null;
   });
   protected readonly directionsUrl = computed(() => {
+    const s = this.showroom();
+    if (!s) return null;
     const p = this.point();
-    return p ? mapDirectionsUrl(p) : null;
+    return p ? mapDirectionsUrl(p) : s.address ? mapSearchUrl(s.address) : null;
   });
 }
