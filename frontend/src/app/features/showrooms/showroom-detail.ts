@@ -36,7 +36,7 @@ import { ShowroomMap } from './showroom-map';
                [href]="'https://www.google.com/maps/dir/?api=1&destination=' + s.latitude + ',' + s.longitude">Get directions</a>
           }
         </div>
-        <app-showroom-map class="h-[50vh] min-h-[280px] lg:sticky lg:top-24 lg:h-[calc(100vh-8rem)] lg:max-h-[40rem]" [showrooms]="[s]" />
+        <app-showroom-map class="lg:sticky lg:top-24 lg:self-start" [showroom]="s" [showDetails]="false" />
       </div>
     } @else if (showroom.isLoading()) {
       <div class="container-x grid gap-8 py-8 lg:grid-cols-2" aria-busy="true" aria-label="Loading showroom">

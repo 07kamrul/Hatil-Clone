@@ -9,7 +9,8 @@ import { Showroom } from '../../core/models';
 import { Seo } from '../../core/seo';
 import { Breadcrumbs } from '../../shared/ui/breadcrumbs';
 import { Icon } from '../../shared/ui/icon';
-import { ShowroomMap } from './showroom-map';
+import { ShowroomMap, pickActiveShowroom } from './showroom-map';
+import { mapDirectionsUrl } from '../../core/maps-link';
 
 @Component({
   selector: 'app-showrooms-page',
@@ -69,8 +70,7 @@ import { ShowroomMap } from './showroom-map';
             }
           }
         </ul>
-        <app-showroom-map class="h-[60vh] min-h-[280px] lg:sticky lg:top-24 lg:block lg:h-[calc(100vh-10rem)] lg:min-h-[28rem]" [class.hidden]="view() !== 'map'"
-                          [showrooms]="showrooms.value() ?? []" [selected]="selected()" (pick)="selected.set($event)" />
+        <app-showroom-map class="lg:sticky lg:top-24 lg:block lg:self-start" [class.hidden]="view() !== 'map'" [showroom]="activeShowroom()" />
       </div>
     </div>
   `,
@@ -90,6 +90,7 @@ export class ShowroomsPage {
     stream: ({ params }) => this.api.showrooms(params.city ?? undefined).pipe(catchError(() => of([] as Showroom[]))),
   });
   protected readonly count = computed(() => this.showrooms.value()?.length ?? 0);
+  protected readonly activeShowroom = computed(() => pickActiveShowroom(this.showrooms.value() ?? [], this.selected()));
 
   constructor() {
     inject(Seo).set({ title: 'Showrooms', description: 'Find a furniture showroom near you — addresses, opening hours and directions.', path: '/showrooms' });
@@ -107,6 +108,6 @@ export class ShowroomsPage {
   }
 
   protected directions(s: Showroom): string {
-    return `https://www.google.com/maps/dir/?api=1&destination=${s.latitude},${s.longitude}`;
+    return mapDirectionsUrl({ lat: s.latitude ?? 0, lng: s.longitude ?? 0 });
   }
 }
